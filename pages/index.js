@@ -1,5 +1,5 @@
 function Home(){
-    return <h1>Ola se você está lendo isso deve ser alguem especial</h1>
+    return <h1>Ambiente para subir o Site, agora vai Gabriel</h1>
 }
 
 export default Home;
