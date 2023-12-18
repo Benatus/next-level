@@ -3,16 +3,7 @@ function Home() {
     <html class="wp-toolbar interface-interface-skeleton__html-container" lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 	<title>Índice ‹ Modelo ‹ Editor ‹ FastAndGo — WordPress</title>
-<script type="text/javascript" async="" src="./Índice ‹ Modelo ‹ Editor ‹ FastAndGo — WordPress_files/js"></script><script async="" crossorigin="anonymous" src="./Índice ‹ Modelo ‹ Editor ‹ FastAndGo — WordPress_files/fs.js.download"></script><script async="" src="./Índice ‹ Modelo ‹ Editor ‹ FastAndGo — WordPress_files/analytics.js.download"></script><script type="text/javascript">
-addLoadEvent = function(func){if(typeof jQuery!=='undefined')jQuery(function(){func();});else if(typeof wpOnload!=='function'){wpOnload=func;}else{var oldonload=wpOnload;wpOnload=function(){oldonload();func();}}};
-var ajaxurl = '/wp-admin/admin-ajax.php',
-	pagenow = 'site-editor',
-	typenow = '',
-	adminpage = 'site-editor-php',
-	thousandsSeparator = '.',
-	decimalPoint = ',',
-	isRtl = 0;
-</script>
+
 <link rel="dns-prefetch" href="https://s0.wp.com/">
 <link rel="dns-prefetch" href="https://www.google.com/">
 <link rel="dns-prefetch" href="https://widgets.wp.com/">
