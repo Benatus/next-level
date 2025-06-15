@@ -21,7 +21,8 @@ async function status(req, res) {
 
         });
     } catch {
-
+        console.error("Erro ao obter o status:", error);
+        res.status(500).json({ error: "Erro ao obter o status do servidor" });
     } finally {
 
     }
