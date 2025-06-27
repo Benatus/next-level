@@ -14,7 +14,7 @@ async function migrations(req, res) {
         migrationsTable: 'pgmigrations',
     }
     if (req.method === "GET") {
-        console.log("entrou no GET")
+
         try {
             const pendingMigrations = await migrationsRunner(defautMigrationsOptions)
             await dbClient.end();
@@ -27,7 +27,7 @@ async function migrations(req, res) {
     }
 
     if (req.method === "POST") {
-        console.log("entrou no POST")
+
         try {
             const migratedMigrations = await migrationsRunner({
                 ...defautMigrationsOptions,
