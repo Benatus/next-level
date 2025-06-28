@@ -46,13 +46,13 @@ async function migrations(req, res) {
         } finally {
             await dbClient.end();
         }
-        return res.status(405).end();
+
+
 
     }
 
-
-
-
+    dbClient.end();
+    return res.status(405).end();
 
 }
 
