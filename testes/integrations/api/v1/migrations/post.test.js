@@ -1,6 +1,11 @@
 import database from "infra/database.js";
+import orquestrator from "testes/orquestrator.js";
 //limpando o schema do banco de dados antes de executar os testes
-beforeAll(cleamDatabase);
+beforeAll(async () => {
+    await orquestrator.waitForAllServices();
+    await cleamDatabase();
+});
+
 //função que limpa o banco de dados, removendo o schema public e criando um novo
 async function cleamDatabase() {
     await database.query({
