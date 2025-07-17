@@ -20,13 +20,12 @@ async function status(req, res) {
         },
       },
     });
-  } catch {
+  } catch (error) {
     console.error("Erro ao obter o status:", error);
     res.status(500).json({ error: "Erro ao obter o status do servidor" });
-  } finally {
   }
 }
 
-//Essa função é chamada quando a rota /api/status é acessada
+// Essa função é chamada quando a rota /api/status é acessada
 // Ela envia uma resposta com status 200 e a mensagem "testando Ok"
 export default status;

@@ -5,7 +5,7 @@ import database from "infra/database";
 async function migrations(req, res) {
   const dbClient = await database.getNewClient();
   const defautMigrationsOptions = {
-    dbClient: dbClient,
+    dbClient,
     dryRun: true,
     dir: join("infra", "migrations"),
     direction: "up",
@@ -34,6 +34,7 @@ async function migrations(req, res) {
         await dbClient.end();
         return res.status(201).json(migratedMigrations);
       }
+
       await dbClient.end();
       return res.status(200).json(migratedMigrations);
     } catch (error) {
@@ -49,6 +50,6 @@ async function migrations(req, res) {
   return res.status(405).end();
 }
 
-//Essa função é chamada quando a rota /api/status é acessada
+// Essa função é chamada quando a rota /api/status é acessada
 // Ela envia uma resposta com status 200 e a mensagem "testando Ok"
 export default migrations;
