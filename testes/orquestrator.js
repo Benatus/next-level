@@ -1,4 +1,7 @@
 import retry from "async-retry";
+const orquestrator = {
+  waitForAllServices,
+};
 async function waitForAllServices() {
   await waitForWebServer();
 
@@ -19,6 +22,4 @@ async function waitForAllServices() {
   }
 }
 
-export default {
-  waitForAllServices,
-};
+export default orquestrator;
