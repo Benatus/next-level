@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Do zero ao infinito, do nada à algum lugar, o próximo nível...",
   "main": "index.js",
+  "engines": {
+    "node": ">=20.12.2"
+  },
   "scripts": {
     "dev": "npm run services:up && npm run wait-for-postgres && npm run migration:up && next dev",
     "lint:prettier:check": "prettier --check .",
