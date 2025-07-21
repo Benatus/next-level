@@ -22,14 +22,16 @@ async function query(queryObject) {
 }
 
 function getSSLValues() {
-  console.log(process.env.POSTGRES_CA);
-  if (process.env.POSTGRES_CA) {
+  if (process.env.POSTGRES_CA !== undefined) {
     return {
       ca: process.env.POSTGRES_CA,
     };
   }
 
-  return process.env.NODE_ENV === "production" ? true : false;
+  return process.env.NODE_ENV === "production" &&
+    process.env.POSTGRES_CA !== undefined
+    ? true
+    : false;
 }
 
 async function getNewClient() {
