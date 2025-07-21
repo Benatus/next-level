@@ -12,12 +12,15 @@ async function cleamDatabase() {
     text: "drop schema public cascade; create schema public;",
   });
 }
-
-test("GET to api/v1/migrations should return 200", async () => {
-  const response = await fetch("http://localhost:3000/api/v1/migrations");
-  expect(response.status).toBe(200);
-  const responseJson = await response.json();
-  console.log(responseJson);
-  expect(Array.isArray(responseJson)).toBe(true);
-  expect(responseJson.length).toBeGreaterThan(0);
+describe("GET /api/v1/migrations", () => {
+  describe("Anonymous user", () => {
+    test("Roda migrations pendentes", async () => {
+      const response = await fetch("http://localhost:3000/api/v1/migrations");
+      expect(response.status).toBe(200);
+      const responseJson = await response.json();
+      console.log(responseJson);
+      expect(Array.isArray(responseJson)).toBe(true);
+      expect(responseJson.length).toBeGreaterThan(0);
+    });
+  });
 });
