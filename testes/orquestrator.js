@@ -1,6 +1,8 @@
 import retry from "async-retry";
+import database from "infra/database.js";
 const orquestrator = {
   waitForAllServices,
+  cleamDatabase,
 };
 async function waitForAllServices() {
   await waitForWebServer();
@@ -22,4 +24,10 @@ async function waitForAllServices() {
   }
 }
 
+//função que limpa o banco de dados, removendo o schema public e criando um novo
+async function cleamDatabase() {
+  await database.query({
+    text: "drop schema public cascade; create schema public;",
+  });
+}
 export default orquestrator;
