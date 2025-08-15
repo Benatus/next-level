@@ -1,0 +1,71 @@
+.my_button {
+  background-color: #4caf50; /* Green */
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+
+.my_button:hover {
+  background-color: #5959d6;
+  outline: none;
+}
+
+.square {
+  background: #fff;
+  border: 1px solid #999;
+  float: left;
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 34px;
+  height: 34px;
+  margin-right: -1px;
+  margin-top: -1px;
+  padding: 0;
+  text-align: center;
+  width: 34px;
+}
+
+.board_row:after {
+  clear: both;
+  content: "";
+  display: table;
+}
+
+.container {
+  max-width: 20%;
+  margin: 20px auto;
+  padding: 16px;
+  border: 1px solid #26b19e;
+  border-radius: 8px;
+  background-color: #61a0ca;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+
+  display: flex;
+  flex-direction: column; /* empilha os filhos verticalmente */
+  align-items: center; /* alinha horizontalmente ao centro */
+  justify-content: center; /* alinha verticalmente ao centro */
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse; /* Remove espaços entre células */
+  font-family: Arial, sans-serif;
+}
+
+.table th,
+.table td {
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.tipoTitulo {
+  text-align: center;
+}
