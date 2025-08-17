@@ -1,0 +1,175 @@
+.container {
+  width: 100%;
+  font-family: Arial, sans-serif;
+  background-color: #f5f5f5; /* fundo neutro */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.menu_bar {
+  background-size: cover;
+  flex-direction: row;
+  background-color: #006837; /* verde */
+  color: white;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.display {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.icon_image {
+  width: 50px;
+  height: 50px;
+  background-image: url(../infra/imagens/formulario/cemsa_apucarana.jpg);
+  background-size: cover;
+  background-position: center;
+  background-color: antiquewhite;
+  border-radius: 50px;
+  border: solid 2px;
+  border-color: bisque;
+  margin: 10px;
+}
+
+.build_forge {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.form_area {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem;
+}
+
+.form_box {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 600px;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+}
+
+.section_title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #1e90ff; /* azul */
+  margin: 1.5rem 0 0.5rem;
+}
+
+.input_legend {
+  font-size: 0.9rem;
+  color: #333;
+  margin: 0.8rem 0 0.3rem;
+}
+
+.input_text {
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.3s ease;
+}
+
+.input_text:focus {
+  border-color: #1e90ff;
+  box-shadow: 0 0 4px rgba(30, 144, 255, 0.3);
+}
+
+/* campos especiais */
+.select_field {
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.3s ease;
+}
+
+.select_field:focus {
+  border-color: #1e90ff;
+  box-shadow: 0 0 4px rgba(30, 144, 255, 0.3);
+}
+
+.textarea_field {
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.3s ease;
+  resize: vertical;
+}
+
+.textarea_field:focus {
+  border-color: #1e90ff;
+  box-shadow: 0 0 4px rgba(30, 144, 255, 0.3);
+}
+
+.input_submit {
+  background-color: #006837; /* verde */
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 0.8rem;
+  margin-top: 1.5rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.input_submit:hover {
+  background-color: #004d26; /* verde mais escuro */
+}
+.successMessage {
+  background-color: #e6ffed; /* verde claro para sucesso */
+  border: 1px solid #00b33c; /* verde mais forte */
+  color: #006837; /* verde do tema */
+  padding: 1.2rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  margin-top: 1rem;
+  font-weight: bold;
+  position: relative;
+}
+
+.successMessageButton {
+  margin-top: 1rem;
+  background-color: #006837;
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+
+.errorMessageButton {
+  margin-top: 1rem;
+  background-color: #aa0a0a;
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
