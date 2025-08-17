@@ -1,6 +1,23 @@
 import styles from "../styles/home.module.css";
+import { useRouter } from "next/router";
 
 function Home() {
+  const router = useRouter();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const login = e.target;
+
+    const data = {
+      usuario: login.usuario.value,
+      senha: login.senha.value,
+    };
+    if (data.usuario == "admin" && data.senha == "admin01") {
+      router.push("/formulario");
+    } else {
+      alert("Usuário ou senha incorretos");
+    }
+  };
   return (
     <>
       <div className={styles.container}>
@@ -12,25 +29,23 @@ function Home() {
         </section>
         <section className={styles.login_area}>
           <div className={styles.login}>
-            <form
-              className={styles.formulario}
-              action="../models/login_controler.js"
-              method="login"
-            >
-              <label className={styles.input_legend} htmlFor="user">
+            <form className={styles.formulario} onSubmit={handleSubmit}>
+              <label className={styles.input_legend} htmlFor="usuario">
                 Usuário
               </label>
               <input
-                id="user"
+                id="usuario"
+                name="usuario"
                 className={styles.input_text}
                 type="text"
                 placeholder="Digite seu usuário aqui"
               ></input>
-              <label className={styles.input_legend} htmlFor="password">
+              <label className={styles.input_legend} htmlFor="senha">
                 Senha
               </label>
               <input
-                id="password"
+                id="senha"
+                name="senha"
                 className={styles.input_text}
                 type="password"
                 placeholder="Digite sua senha aqui"
