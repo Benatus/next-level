@@ -34,7 +34,7 @@ function Formulario() {
         <section className={styles.menu_bar}>
           <div className={styles.display}>
             <div className={styles.icon_image}></div>
-            <h1 className={styles.build_forge}>Registro de Resgate</h1>
+            <h1 className={styles.cemsa}>Registro de Resgate</h1>
           </div>
         </section>
 

@@ -1,0 +1,82 @@
+/* Área do painel central */
+.center_area {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Container dos botões */
+.painel {
+  display: grid;
+  grid-template-columns: repeat(3, 0.5fr); /* 3 colunas iguais */
+  grid-gap: 1.5rem;
+  width: 80%;
+  height: 65%;
+  max-width: 900px;
+  padding: 2rem;
+
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(26, 43, 60, 0.8);
+  backdrop-filter: blur(5px);
+}
+
+/* Botões */
+.botoes {
+  padding: 1rem 2rem;
+  font-size: 1.7rem;
+  font-weight: bold;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background 0.3s ease,
+    transform 0.2s ease;
+}
+
+/* cores individuais */
+.botoes:nth-child(1) {
+  background: #2cb3ff;
+}
+.botoes:nth-child(1):hover {
+  background: #1d8cd8;
+}
+
+.botoes:nth-child(2) {
+  background: #3fe37a;
+}
+.botoes:nth-child(2):hover {
+  background: #28a860;
+}
+
+.botoes:nth-child(3) {
+  background: #ffc93f;
+}
+.botoes:nth-child(3):hover {
+  background: #e6b32f;
+}
+
+.botoes:nth-child(4) {
+  background: #ff6b6b;
+}
+.botoes:nth-child(4):hover {
+  background: #e04e4e;
+}
+
+.botoes:nth-child(5) {
+  background: #a26bff;
+}
+.botoes:nth-child(5):hover {
+  background: #854ed8;
+}
+
+.botoes:nth-child(6) {
+  background: #ff8c42;
+}
+.botoes:nth-child(6):hover {
+  background: #e6732f;
+}
