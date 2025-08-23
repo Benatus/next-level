@@ -1,21 +1,27 @@
 import styles from "../styles/home.module.css";
 import { useRouter } from "next/router";
+import { signIn } from "next-auth/react";
 
 function Home() {
   const router = useRouter();
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const login = e.target;
 
     const data = {
-      usuario: login.usuario.value,
+      email: login.usuario.value,
       senha: login.senha.value,
     };
-    if (data.usuario == "admin" && data.senha == "admin01") {
+    const result = await signIn("Credentials", {
+      redirect: false,
+      email: data.email,
+      password: data.senha,
+    });
+    console.log("RESULTADO", result);
+    if (!result.error) {
       router.push("/formulario");
     } else {
-      alert("Usuário ou senha incorretos");
+      window.alert("Erro de login:", result.error);
     }
   };
   return (
@@ -24,7 +30,7 @@ function Home() {
         <section className={styles.menu_bar}>
           <div className={styles.display}>
             <div className={styles.icon_image}></div>
-            <h1 className={styles.build_forge}>Build Forge</h1>
+            <h1 className={styles.cemsa}>CEMSA</h1>
           </div>
         </section>
         <section className={styles.login_area}>

@@ -10,18 +10,13 @@ exports.up = (pgm) => {
     id: "id",
     name: { type: "varchar(100)", notNull: true },
     email: { type: "varchar(255)", notNull: false, unique: true },
-    password: { type: "varchar(20)", notNull: true },
+    password: { type: "varchar(80)", notNull: true },
     created_at: { type: "timestamp", default: pgm.func("current_timestamp") },
   });
 
   pgm.sql(`
-    INSERT INTO users (name, password)
-    VALUES ('admin', 'admin01');
-  `);
-
-  pgm.sql(`
-    INSERT INTO users (name, password)
-    VALUES ('user', 'user01');
+    INSERT INTO users (name, password, email)
+    VALUES ('admin', '$2b$10$1WL7tXzLY9aY8mlsotrHLuuuMjfG7kCrpFoCXGfwkJjmjGxlEARSi','admin@email.com');
   `);
 };
 

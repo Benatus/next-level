@@ -26,7 +26,7 @@
 .icon_image {
   width: 50px;
   height: 50px;
-  background-image: url(../infra/imagens/formulario/cemsa_apucarana.jpg);
+  background-image: url(../infra/imagens/home/cemsa_apucarana.jpg);
   background-size: cover;
   background-position: center;
   background-color: antiquewhite;
@@ -36,7 +36,7 @@
   margin: 10px;
 }
 
-.build_forge {
+.cemsa {
   color: white;
   font-size: 1.5rem;
   font-weight: bold;
@@ -57,6 +57,10 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   width: 100%;
   max-width: 600px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .formulario {
