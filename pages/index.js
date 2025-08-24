@@ -19,7 +19,7 @@ function Home() {
     });
     console.log("RESULTADO", result);
     if (!result.error) {
-      router.push("/formulario");
+      router.push("/painel");
     } else {
       window.alert("Erro de login:", result.error);
     }
