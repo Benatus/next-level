@@ -111,7 +111,7 @@ async function getLastUpdatedAnimals() {
         FROM animal a
         JOIN especie e ON a.especie_id = e.id
         JOIN raca r ON a.raca_id = r.id
-        ORDER BY a.updated_at DESC
+        ORDER BY a.atualizado_em DESC
         LIMIT 15;
       `,
     };
