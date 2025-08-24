@@ -42,6 +42,16 @@ export default NextAuth({
       },
     }),
   ],
+  session: {
+    strategy: "jwt", // ou "database" se usar persistência
+    maxAge: 60 * 60 * 24, // ⏰ 24 horas
+    updateAge: 60 * 60, // ⏰ a cada 1 hora o token é revalidado
+  },
+
+  // 🔹 Configuração do JWT
+  jwt: {
+    maxAge: 60 * 60 * 24 * 7, // ⏰ 7 dias (se não tiver refresh)
+  },
   secret: process.env.NEXTAUTH_SECRET,
 });
 async function findUserByEmail(email) {
