@@ -1,5 +1,6 @@
 import styles from "styles/canil.module.css";
 import Image from "next/image";
+import { getSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 function Painel() {
   const [form_data, setFormData] = useState({});
@@ -294,3 +295,23 @@ function VerticalForm({ localData, setLocalData, editable }) {
 }
 
 export default Painel;
+
+export async function getServerSideProps(context) {
+  const session = await getSession(context);
+
+  // 👇 Se não estiver logado → redireciona pra login
+  if (!session) {
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {
+      user: session.user,
+    },
+  };
+}

@@ -1,6 +1,6 @@
 import styles from "../styles/home.module.css";
 import { useRouter } from "next/router";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 
 function Home() {
   const router = useRouter();
@@ -70,3 +70,20 @@ function Home() {
 }
 
 export default Home;
+
+export async function getServerSideProps(context) {
+  const session = await getSession(context);
+
+  if (session) {
+    return {
+      redirect: {
+        destination: "/painel", // já logado → vai pro painel
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {},
+  };
+}
