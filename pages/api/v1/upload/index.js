@@ -1,4 +1,4 @@
-import formidable from "formidable";
+import { formidable } from "formidable";
 import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
 import os from "os";
@@ -19,7 +19,7 @@ export default async function upload(req, res) {
     return res.status(405).json({ error: "Método não permitido" });
   }
 
-  const form = new formidable.IncomingForm({
+  const form = formidable({
     keepExtensions: true,
     multiples: false,
     uploadDir: path.join(os.tmpdir()), // diretório temporário
