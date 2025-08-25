@@ -1,4 +1,4 @@
-import { formidable } from "formidable";
+import formidable from "formidable";
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -16,7 +16,7 @@ export const config = {
   },
 };
 
-export default async function handler(req, res) {
+export default async function Upload(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método não permitido" });
   }
@@ -45,27 +45,32 @@ export default async function handler(req, res) {
 
     try {
       // Faz upload para Supabase
-      const fileStream = fs.createReadStream(tempPath);
+      const fileBuffer = fs.readFileSync(tempPath);
 
       const { error: uploadError } = await supabase.storage
         .from("imagens")
-        .upload(fileName, fileStream, {
+        .upload(fileName, fileBuffer, {
           contentType: file.mimetype,
           upsert: false,
         });
 
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage.from("imagens").getPublicUrl(fileName);
+      const { data: publicData, error: publicError } = supabase.storage
+        .from("imagens")
+        .getPublicUrl(fileName);
 
-      // limpa o arquivo temporário
+      if (publicError) throw publicError;
+
       try {
         fs.unlinkSync(tempPath);
       } catch (e) {
         console.warn("Não foi possível remover temp file:", e.message);
       }
 
-      return res.status(200).json({ url: data.publicUrl });
+      return res.status(200).json({ url: publicData.publicUrl });
+
+      // limpa o arquivo temporário
     } catch (e) {
       return res.status(500).json({ error: e.message || "Erro inesperado" });
     }
