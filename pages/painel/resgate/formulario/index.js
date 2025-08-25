@@ -105,9 +105,6 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
     };
     const animal = await fetch("/api/v1/animail", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(animalData),
     });
     console.log("Animal criado:", animal);
@@ -122,9 +119,6 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
     try {
       const res = await fetch("/api/v1/formulario", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify(data),
       });
 
@@ -154,6 +148,7 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
         const response = await fetch("/api/v1/upload", {
           method: "POST",
           body: formData,
+          duplex: "half",
         });
 
         const data = await response.json();
