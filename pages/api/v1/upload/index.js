@@ -5,8 +5,8 @@ import os from "os";
 import path from "path";
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY, // ou anon key
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY, // ou anon key
 );
 export const config = {
   api: {
