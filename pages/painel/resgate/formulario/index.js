@@ -119,7 +119,7 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
         local: form.local.value,
         agente: form.agente.value,
         observacao: form.observacao.value,
-        animal_id: animalResult.id,
+        animal_id: animal.id,
       };
       log += "\nDados do resgate preparados:" + JSON.stringify(data);
       const res = await fetch("/api/v1/formulario", {
