@@ -152,8 +152,8 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
 
       const response = await fetch("/api/v1/upload", {
         method: "POST",
+        duplex: "half",
         body: formData,
-        duplex: "half", // 🔹 ESSENCIAL para Next.js 13+ App Router
       });
 
       const data = await response.json();
