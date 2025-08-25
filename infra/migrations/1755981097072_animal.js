@@ -11,10 +11,10 @@ exports.shorthands = undefined;
 exports.up = (pgm) => {
   pgm.createTable("animal", {
     id: "id",
-    nome: { type: "varchar(100)", notNull: true },
+    nome: { type: "varchar(100)" },
     idade: { type: "varchar(20)", notNull: true },
     status: { type: "varchar(50)" },
-    sexo: { type: "varchar(10)" },
+    sexo: { type: "varchar(10)", notNull: true },
     especie_id: {
       type: "integer",
       notNull: true,
@@ -23,7 +23,7 @@ exports.up = (pgm) => {
     },
     raca_id: {
       type: "integer",
-      notNull: true,
+      notNull: false,
       references: "raca",
       onDelete: "CASCADE",
     },
@@ -36,6 +36,10 @@ exports.up = (pgm) => {
       type: "timestamp",
       notNull: true,
       default: pgm.func("CURRENT_TIMESTAMP"),
+    },
+    imagem_url: {
+      type: "text",
+      notNull: false,
     },
   });
   pgm.sql(`

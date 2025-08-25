@@ -91,21 +91,34 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
     e.preventDefault();
 
     const form = e.target;
+    const image_url = await upload(form.imagem.files[0]);
+    console.log("URL da imagem enviada:", image_url);
 
+    const animalData = {
+      nome: null,
+      idade: form.idade.value,
+      status: null,
+      sexo: form.sexo.value,
+      especie_id: form.especie.value,
+      raca_id: null,
+      imagem_url: image_url,
+    };
+    const animal = await fetch("/api/v1/animail", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(animalData),
+    });
+    console.log("Animal criado:", animal);
     const data = {
       data: form.data.value,
       hora: form.hora.value,
       local: form.local.value,
       agente: form.agente.value,
-      especie: form.especie.value,
-      sexo: form.sexo.value,
-      idade: form.idade.value,
-      cor: form.cor.value,
-      condicao: form.condicao.value,
-      comportamento: form.comportamento.value,
       observacao: form.observacao.value,
+      animal_id: animal.id,
     };
-
     try {
       const res = await fetch("/api/v1/formulario", {
         method: "POST",
@@ -132,6 +145,31 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
       errorReturn();
     }
   };
+  async function upload(imagem) {
+    {
+      try {
+        const formData = new FormData();
+        formData.append("imagem", imagem); // 'imagem' deve corresponder ao nome esperado no endpoint
+
+        const response = await fetch("/api/v1/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Erro ao fazer upload");
+        } else {
+          console.log("Upload bem-sucedido:", data);
+          return data.url; // Retorna a URL da imagem enviada
+        }
+      } catch (error) {
+        console.error("Erro ao fazer upload:", error);
+        throw error;
+      }
+    }
+  }
 
   return (
     <form onSubmit={handleSubmit} className={styles.formulario}>
@@ -166,7 +204,7 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
         id="agente"
         className={styles.input_text}
         type="text"
-        placeholder="Nome do voluntário"
+        placeholder="Quem realizou o resgate?"
       />
 
       {/* 🐾 Dados do animal */}
@@ -200,36 +238,6 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
         <option value="idoso">Idoso</option>
       </select>
 
-      <label className={styles.input_legend} htmlFor="cor">
-        Pelagem / Cor
-      </label>
-      <input
-        id="cor"
-        className={styles.input_text}
-        type="text"
-        placeholder="Ex: preto e branco, caramelo..."
-      />
-
-      <label className={styles.input_legend} htmlFor="condicao">
-        Condição física
-      </label>
-      <input
-        id="condicao"
-        className={styles.input_text}
-        type="text"
-        placeholder="Ferido, saudável, desnutrido..."
-      />
-
-      <label className={styles.input_legend} htmlFor="comportamento">
-        Comportamento
-      </label>
-      <input
-        id="comportamento"
-        className={styles.input_text}
-        type="text"
-        placeholder="Dócil, agressivo, assustado..."
-      />
-
       {/* 📂 Observações */}
       <h2 className={styles.section_title}>Observações</h2>
       <textarea
@@ -243,7 +251,7 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
       <label className={styles.input_legend} htmlFor="imagem">
         Foto do animal
       </label>
-      <input id="imagem" className={styles.input_text} type="file" disabled />
+      <input id="imagem" className={styles.input_text} type="file" />
 
       {/* Botão de envio */}
       <input
