@@ -108,9 +108,9 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
         method: "POST",
         body: JSON.stringify(animalData),
       });
-      const animalResult = await animal.json();
-      log += "\nResposta da API de animal:" + JSON.stringify(animalResult);
-      if (!animalResult.success) {
+
+      log += "\nResposta da API de animal:" + JSON.stringify(animal);
+      if (!animal.success) {
         throw new Error(log + "Não registrou animal");
       }
       const data = {
@@ -119,7 +119,7 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
         local: form.local.value,
         agente: form.agente.value,
         observacao: form.observacao.value,
-        animal_id: animalResult.id,
+        animal_id: animal.id,
       };
       log += "\nDados do resgate preparados:" + JSON.stringify(data);
       const res = await fetch("/api/v1/formulario", {
@@ -146,26 +146,30 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
     }
   };
   async function upload(imagem) {
+    let log = "Iniciando upload da imagem";
     try {
       const formData = new FormData();
       formData.append("imagem", imagem);
-
+      log += "\nFormData preparada";
       const response = await fetch("/api/v1/upload", {
         method: "POST",
         duplex: "half",
         body: formData,
       });
+      log += "\nRequisição enviada para /api/v1/upload";
 
       const data = await response.json();
-
+      log += "\nResposta da API de upload:" + JSON.stringify(data);
       if (!response.ok) {
+        log += "\nErro no upload:" + JSON.stringify(data);
         throw new Error(data.error || "Erro ao fazer upload");
       }
 
-      console.log("Upload bem-sucedido:", data);
+      log += "\nUpload realizado com sucesso, URL:" + data.url;
+      console.log(log);
       return data.url;
     } catch (error) {
-      console.error("Erro ao fazer upload:", error);
+      console.error(log + "Erro ao fazer upload:", error);
       throw error;
     }
   }
