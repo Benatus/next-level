@@ -86,55 +86,61 @@ function Formulario() {
 }
 function FormResgate({ onSubmitSuccess, errorReturn }) {
   const [status, setStatus] = useState("");
-
+  let log = "Iniciando submissão do formulário";
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const form = e.target;
-    const image_url = await upload(form.imagem.files[0]);
-    console.log("URL da imagem enviada:", image_url);
-
-    const animalData = {
-      nome: null,
-      idade: form.idade.value,
-      status: null,
-      sexo: form.sexo.value,
-      especie_id: form.especie.value,
-      raca_id: null,
-      imagem_url: image_url,
-    };
-    const animal = await fetch("/api/v1/animail", {
-      method: "POST",
-      body: JSON.stringify(animalData),
-    });
-    console.log("Animal criado:", animal);
-    const data = {
-      data: form.data.value,
-      hora: form.hora.value,
-      local: form.local.value,
-      agente: form.agente.value,
-      observacao: form.observacao.value,
-      animal_id: animal.id,
-    };
     try {
+      const form = e.target;
+      const image_url = await upload(form.imagem.files[0]);
+      log += "\nImagem enviada com sucesso,url:" + image_url;
+
+      const animalData = {
+        nome: null,
+        idade: form.idade.value,
+        status: null,
+        sexo: form.sexo.value,
+        especie_id: form.especie.value,
+        raca_id: null,
+        imagem_url: image_url,
+      };
+      log += "\nDados do animal preparados:" + JSON.stringify(animalData);
+      const animal = await fetch("/api/v1/animail", {
+        method: "POST",
+        body: JSON.stringify(animalData),
+      });
+      const animalResult = await animal.json();
+      log += "\nResposta da API de animal:" + JSON.stringify(animalResult);
+      if (!animalResult.success) {
+        throw new Error(log + "Não registrou animal");
+      }
+      const data = {
+        data: form.data.value,
+        hora: form.hora.value,
+        local: form.local.value,
+        agente: form.agente.value,
+        observacao: form.observacao.value,
+        animal_id: animalResult.id,
+      };
+      log += "\nDados do resgate preparados:" + JSON.stringify(data);
       const res = await fetch("/api/v1/formulario", {
         method: "POST",
         body: JSON.stringify(data),
       });
-
+      log += "\nRequisição enviada para /api/v1/formulario";
       const result = await res.json();
       if (result.success) {
         setStatus("Resgate registrado com sucesso!");
       } else {
-        throw new Error("Não registrou");
+        throw new Error(log + "Não registrou");
       }
 
       if (onSubmitSuccess) {
         onSubmitSuccess();
       }
-      console.log("Resposta da API:", result);
+      log += "\nResposta da API de formulário:" + JSON.stringify(result);
+      console.log(log);
     } catch (error) {
-      console.error(error);
+      console.error(log + "\nErro ao registrar resgate:", error);
       setStatus("Erro ao registrar resgate.");
       errorReturn();
     }
