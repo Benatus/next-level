@@ -29,6 +29,7 @@
     "bcryptjs": "^3.0.2",
     "dotenv": "^16.6.1",
     "dotenv-expand": "^11.0.7",
+    "formidable": "^3.5.4",
     "next": "^14.2.30",
     "next-auth": "^4.24.11",
     "node-pg-migrate": "^7.9.1",

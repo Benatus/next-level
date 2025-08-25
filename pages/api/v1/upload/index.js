@@ -1,6 +1,6 @@
 import formidable from "formidable";
 import fs from "fs";
-import { supabase } from "../../../../lib/supabase";
+import { supabase } from "@supabase/supabase-js";
 
 export const config = {
   api: {
