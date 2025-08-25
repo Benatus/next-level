@@ -1,7 +1,13 @@
 import formidable from "formidable";
 import fs from "fs";
-import { supabase } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
+import os from "os";
+import path from "path";
 
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY, // ou anon key
+);
 export const config = {
   api: {
     bodyParser: false, // necessário para uploads
@@ -16,14 +22,14 @@ export default async function upload(req, res) {
   const form = new formidable.IncomingForm({
     keepExtensions: true,
     multiples: false,
-    uploadDir: "./tmp", // diretório temporário
+    uploadDir: path.join(os.tmpdir()), // diretório temporário
   });
 
   form.parse(req, async (err, fields, files) => {
     if (err) return res.status(500).json({ error: err.message });
 
     const file = files.imagem;
-    const tempPath = file.filepath;
+    const tempPath = file.filepath || file.path;
     const fileName = `${Date.now()}-${file.originalFilename}`;
 
     try {
@@ -39,18 +45,19 @@ export default async function upload(req, res) {
 
       if (uploadError) throw uploadError;
 
-      const { publicUrl } = supabase.storage
-        .from("imagens")
-        .getPublicUrl(fileName);
+      const { data } = supabase.storage.from("imagens").getPublicUrl(fileName);
 
       // Opcional: salvar URL no PostgreSQL
       // await pool.query("INSERT INTO imagens (nome, url) VALUES ($1, $2)", [file.originalFilename, publicUrl]);
+      try {
+        fs.unlinkSync(tempPath); // limpa arquivo temporário
+      } catch (err) {
+        console.log("Erro ao deletar arquivo temporário", err);
+      }
 
-      fs.unlinkSync(tempPath); // limpa arquivo temporário
-
-      res.status(200).json({ url: publicUrl });
+      return res.status(200).json({ url: data.publicUrl });
     } catch (e) {
-      res.status(500).json({ error: e.message });
+      return res.status(500).json({ error: e.message });
     }
   });
 }
