@@ -104,7 +104,7 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
         imagem_url: image_url,
       };
       log += "\nDados do animal preparados:" + JSON.stringify(animalData);
-      const animal = await fetch("/api/v1/animail", {
+      const animal = await fetch("/api/v1/animais", {
         method: "POST",
         body: JSON.stringify(animalData),
       });

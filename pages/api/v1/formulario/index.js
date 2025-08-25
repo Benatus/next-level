@@ -24,9 +24,9 @@ async function registrarResgate(data) {
     const result = await db.query({
       text: `
       INSERT INTO resgate (
-        data, hora, local, agente, especie, sexo, idade, cor, condicao, comportamento, observacao
+        data, hora, local, agente, observacao, animal_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *;
     `,
       values: [
@@ -34,13 +34,8 @@ async function registrarResgate(data) {
         data.hora,
         data.local,
         data.agente,
-        data.especie,
-        data.sexo,
-        data.idade,
-        data.cor,
-        data.condicao,
-        data.comportamento,
         data.observacao,
+        data.animal_id,
       ],
     });
     return result.rows[0];
