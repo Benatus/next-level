@@ -140,29 +140,27 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
     }
   };
   async function upload(imagem) {
-    {
-      try {
-        const formData = new FormData();
-        formData.append("imagem", imagem); // 'imagem' deve corresponder ao nome esperado no endpoint
+    try {
+      const formData = new FormData();
+      formData.append("imagem", imagem);
 
-        const response = await fetch("/api/v1/upload", {
-          method: "POST",
-          body: formData,
-          duplex: "half",
-        });
+      const response = await fetch("/api/v1/upload", {
+        method: "POST",
+        body: formData,
+        duplex: "half", // 🔹 ESSENCIAL para Next.js 13+ App Router
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(data.error || "Erro ao fazer upload");
-        } else {
-          console.log("Upload bem-sucedido:", data);
-          return data.url; // Retorna a URL da imagem enviada
-        }
-      } catch (error) {
-        console.error("Erro ao fazer upload:", error);
-        throw error;
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao fazer upload");
       }
+
+      console.log("Upload bem-sucedido:", data);
+      return data.url;
+    } catch (error) {
+      console.error("Erro ao fazer upload:", error);
+      throw error;
     }
   }
 
