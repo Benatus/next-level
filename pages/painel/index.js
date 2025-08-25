@@ -158,7 +158,7 @@ function PanelData({
       <div className={styles.panel_content}>
         <div className={styles.image_column}>
           <div className={styles.image_container}>
-            <Image alt="Foto do Animal"></Image>
+            <Image alt="Foto do Animal" src={localData.imagem_url}></Image>
           </div>
 
           <button

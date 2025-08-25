@@ -104,6 +104,7 @@ async function getLastUpdatedAnimals() {
     a.sexo,
     a.criado_em,
     a.atualizado_em,
+    a.imagem_url,
     e.nome_especie AS especie,
     r.nome_raca AS raca
 FROM animal a
