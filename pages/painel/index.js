@@ -82,6 +82,7 @@ function Lista({ list_object, set_form_data }) {
     set_form_data(item);
   };
   list_object.forEach((item) => {
+    item.imagem_url = decodeURIComponent(item?.imagem_url);
     item_list.push(
       <li className={styles.list_item} key={String(item.id) + item.nome}>
         <button
@@ -114,16 +115,10 @@ function PanelData({
 }) {
   const [editable, setEditable] = useState(false);
   const [localData, setLocalData] = useState(form_data);
-  const [img_url, setImgUrl] = useState("");
 
   // Sincroniza localData sempre que form_data muda (ex: seleciona outro item)
   useEffect(() => {
     setLocalData(form_data);
-    if (form_data?.imagem_url) {
-      setImgUrl(decodeURIComponent(form_data.imagem_url));
-    } else {
-      setImgUrl(""); // sem imagem
-    }
   }, [form_data]);
 
   // Alterna entre Editar / Cancelar
@@ -164,7 +159,7 @@ function PanelData({
       <div className={styles.panel_content}>
         <div className={styles.image_column}>
           <div className={styles.image_container}>
-            <Image alt="Foto do Animal" src={img_url}></Image>
+            <Image alt="Foto do Animal" src={form_data?.imagem_url}></Image>
           </div>
 
           <button
