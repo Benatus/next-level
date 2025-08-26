@@ -1,3 +1,4 @@
+import { log } from "console";
 import database from "infra/database";
 
 async function animail(req, res) {
@@ -124,9 +125,14 @@ LIMIT 15;
 }
 
 async function CreateAnimal(animal) {
+  let log = "Iniciando criação de animal";
   try {
     const animal_obj = JSON.parse(animal);
-
+    log +=
+      "\nDados recebidos: " +
+      animal_obj.idade +
+      "sem transformar" +
+      animal.idade;
     const queryObject = {
       text: `
         INSERT INTO animal (nome, idade, status, sexo, especie_id, raca_id, imagem_url)
@@ -144,10 +150,12 @@ async function CreateAnimal(animal) {
       ],
     };
     const result = await database.query(queryObject);
+    log += "\nAnimal criado com sucesso: " + JSON.stringify(result.rows[0]);
+    console.log(log);
     return result.rows?.[0] ?? null;
   } catch (err) {
-    console.error("Error creating animal:", err);
-    throw new Error("Failed to create animal");
+    console.error(log + "Error creating animal:", err);
+    throw new Error(log + "Failed to create animal", err);
   }
 }
 export default animail;
