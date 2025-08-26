@@ -158,10 +158,13 @@ function PanelData({
       <div className={styles.panel_content}>
         <div className={styles.image_column}>
           <div className={styles.image_container}>
-            <Image
-              alt="Foto do Animal"
-              src={decodeURIComponent(form_data?.imagem_url) || ""}
-            ></Image>
+            {form_data.imagem_url && (
+              <Image
+                alt="Foto do Animal"
+                src={decodeURIComponent(form_data?.imagem_url)}
+                className={styles.imagem}
+              ></Image>
+            )}
           </div>
 
           <button
