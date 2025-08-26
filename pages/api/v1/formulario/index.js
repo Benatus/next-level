@@ -20,26 +20,29 @@ async function formulario(req, res) {
 }
 
 async function registrarResgate(data) {
+  const resgateData = JSON.parse(data);
   try {
     const result = await db.query({
       text: `
-      INSERT INTO resgate (
-        data, hora, local, agente, observacao, animal_id
-      )
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *;
-    `,
+        INSERT INTO resgate (
+          data, hora, local, agente, observacao, animal_id
+        )
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *;
+      `,
       values: [
-        data.data,
-        data.hora,
-        data.local,
-        data.agente,
-        data.observacao,
-        data.animal_id,
+        resgateData.data || null,
+        resgateData.hora || null,
+        resgateData.local || null,
+        resgateData.agente || null,
+        resgateData.observacao || null,
+        resgateData.animal_id || null,
       ],
     });
+
     return result.rows[0];
   } catch (err) {
+    console.error("Erro ao registrar resgate:", err);
     throw new Error("Não registrou: " + err.message);
   }
 }
