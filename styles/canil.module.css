@@ -168,6 +168,7 @@
   max-height: 100%;
   object-fit: contain; /* mantém proporção e cabe dentro do container */
 }
+
 /* Formulário */
 .form_vertical {
   display: flex;
