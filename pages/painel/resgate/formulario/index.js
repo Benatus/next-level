@@ -264,7 +264,6 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
         className={styles.input_text}
         type="file"
         accept="image/*"
-        capture="environment"
       />
 
       {/* Botão de envio */}

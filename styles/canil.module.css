@@ -17,6 +17,19 @@
   max-height: 400px; /* ajuste conforme seu layout */
   width: 100%;
 }
+@media screen and (max-width: 600px) {
+  .canil {
+    flex-direction: column; /* lista abaixo do painel */
+  }
+  .list_panel {
+    max-width: 100%; /* lista ocupa toda a largura */
+    margin-top: 16px; /* espaçamento entre painel e lista */
+  }
+
+  .panel_data {
+    width: 100%; /* painel ocupa toda a largura */
+  }
+}
 .list_panel {
   flex: 1; /* ocupa o espaço proporcional */
   max-width: 400px; /* mantém limite da lista */

@@ -234,6 +234,22 @@ function VerticalForm({ localData, setLocalData, editable }) {
             </div>
           );
         }
+        if (key === "criado_em" || key === "atualizado_em") {
+          return (
+            <div key={key} className={styles.form_vertical_div}>
+              <label htmlFor={key} className={styles.label_form}>
+                {key}
+              </label>
+              <input
+                id={key}
+                type="text"
+                value={new Date(localData[key]).toLocaleString() || ""}
+                disabled
+                className={styles.input_text}
+              />
+            </div>
+          );
+        }
 
         if (key === "especie") {
           return (
