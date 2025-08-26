@@ -1,4 +1,3 @@
-import { log } from "console";
 import database from "infra/database";
 
 async function animail(req, res) {
