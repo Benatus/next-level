@@ -12,15 +12,15 @@ async function animail(req, res) {
     } else if (req.method === "PUT") {
       console.log("Entrou no PUT da API animal");
       const data = await UpdateAnimal(req.body);
-      res.status(200).json({ success: true, data: data });
+      return res.status(200).json({ success: true, data: data });
     } else if (req.method === "POST") {
       const data = await CreateAnimal(req.body);
-      res.status(200).json({ success: true, data: data });
+      return res.status(200).json({ success: true, data: data });
     } else {
-      res.status(405).json({ error: "Método não permitido" });
+      return res.status(405).json({ error: "Método não permitido" });
     }
   } catch (err) {
-    res.status(500).json({ error: "Erro inesperado: " + err.message });
+    return res.status(500).json({ error: "Erro inesperado: " + err.message });
   }
 }
 
