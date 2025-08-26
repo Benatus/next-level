@@ -92,7 +92,6 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
     try {
       const form = e.target;
       const image_url = await upload(form.imagem.files[0]);
-      const safeName = image_url.replace(/\s+/g, "_");
       log += "\nImagem enviada com sucesso,url:" + image_url;
       const especie = form.especie.value;
       let especie_id = 3; // ID padrão para "outro"
@@ -106,13 +105,15 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
         sexo: form.sexo.value,
         especie_id: especie_id,
         raca_id: null,
-        imagem_url: safeName,
+        imagem_url: image_url,
       };
       log += "\nDados do animal preparados:" + JSON.stringify(animalData);
-      const animal = await fetch("/api/v1/animais", {
-        method: "POST",
-        body: JSON.stringify(animalData),
-      });
+      const animal = (
+        await fetch("/api/v1/animais", {
+          method: "POST",
+          body: JSON.stringify(animalData),
+        })
+      ).json();
 
       log += "\nResposta da API de animal:" + JSON.stringify(animal);
       if (!animal.success) {
@@ -124,7 +125,7 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
         local: form.local.value,
         agente: form.agente.value,
         observacao: form.observacao.value,
-        animal_id: animal.id,
+        animal_id: animal.data.id,
       };
       log += "\nDados do resgate preparados:" + JSON.stringify(data);
       const res = await fetch("/api/v1/formulario", {
