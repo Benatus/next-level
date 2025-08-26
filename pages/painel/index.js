@@ -82,7 +82,6 @@ function Lista({ list_object, set_form_data }) {
     set_form_data(item);
   };
   list_object.forEach((item) => {
-    item.imagem_url = decodeURIComponent(item?.imagem_url);
     item_list.push(
       <li className={styles.list_item} key={String(item.id) + item.nome}>
         <button
@@ -159,7 +158,10 @@ function PanelData({
       <div className={styles.panel_content}>
         <div className={styles.image_column}>
           <div className={styles.image_container}>
-            <Image alt="Foto do Animal" src={form_data?.imagem_url}></Image>
+            <Image
+              alt="Foto do Animal"
+              src={decodeURIComponent(form_data?.imagem_url) || ""}
+            ></Image>
           </div>
 
           <button
