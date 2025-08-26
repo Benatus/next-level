@@ -159,7 +159,9 @@
   color: #2cb3ff;
   font-weight: 500;
 }
-
+.imagem {
+  flex: 1;
+}
 /* Formulário */
 .form_vertical {
   display: flex;

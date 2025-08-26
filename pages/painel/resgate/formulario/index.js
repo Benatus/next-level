@@ -113,7 +113,7 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
         body: JSON.stringify(animalData),
       });
       const animal = await response.json();
-      log += "\nResposta da API de animal:" + animal;
+      log += "\nResposta da API de animal:" + JSON.stringify(animal);
       if (!animal.success) {
         throw new Error(log + "Não registrou animal");
       }
@@ -132,6 +132,7 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
       });
       log += "\nRequisição enviada para /api/v1/formulario";
       const result = await res.json();
+      log += "\nResposta da API recebida" + JSON.stringify(result);
       if (result.success) {
         setStatus("Resgate registrado com sucesso!");
       } else {
