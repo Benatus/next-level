@@ -108,14 +108,12 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
         imagem_url: image_url,
       };
       log += "\nDados do animal preparados:" + JSON.stringify(animalData);
-      const animal = (
-        await fetch("/api/v1/animais", {
-          method: "POST",
-          body: JSON.stringify(animalData),
-        })
-      ).json();
+      const animal = await fetch("/api/v1/animais", {
+        method: "POST",
+        body: JSON.stringify(animalData),
+      });
 
-      log += "\nResposta da API de animal:" + JSON.stringify(animal);
+      log += "\nResposta da API de animal:" + animal + JSON.stringify(animal);
       if (!animal.success) {
         throw new Error(log + "Não registrou animal");
       }
