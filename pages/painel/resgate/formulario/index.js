@@ -99,9 +99,9 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
       else if (especie === "gato") especie_id = 2;
 
       const animalData = {
-        nome: null,
+        nome: "Ainda Não Definido",
         idade: form.idade.value,
-        status: null,
+        status: "Resgatado",
         sexo: form.sexo.value,
         especie_id: especie_id,
         raca_id: null,
@@ -259,7 +259,13 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
       <label className={styles.input_legend} htmlFor="imagem">
         Foto do animal
       </label>
-      <input id="imagem" className={styles.input_text} type="file" />
+      <input
+        id="imagem"
+        className={styles.input_text}
+        type="file"
+        accept="image/*"
+        capture="environment"
+      />
 
       {/* Botão de envio */}
       <input

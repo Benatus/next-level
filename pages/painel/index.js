@@ -211,7 +211,7 @@ function VerticalForm({ localData, setLocalData, editable }) {
   return (
     <form id="canil_form" name="canil_form" className={styles.form_vertical}>
       {keys.map((key) => {
-        if (key === "id" || key === "image") return null;
+        if (key === "id" || key === "imagem_url") return null;
 
         // Campos específicos com select
         if (key === "sexo") {
