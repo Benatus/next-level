@@ -1,4 +1,5 @@
 import styles from "styles/formulario.module.css";
+import { BotaoMenuBar } from "infra/components/basic_components";
 import { useState } from "react";
 
 function Formulario() {
@@ -33,8 +34,13 @@ function Formulario() {
       <div className={styles.container}>
         <section className={styles.menu_bar}>
           <div className={styles.display}>
-            <div className={styles.icon_image}></div>
-            <h1 className={styles.cemsa}>Registro de Resgate</h1>
+            <BotaoMenuBar destino={"/painel"}>
+              <div></div>
+              <h1>CEMSA</h1>
+            </BotaoMenuBar>
+            <BotaoMenuBar destino={"/painel/resgate/formulario"}>
+              <h1>Resgate</h1>
+            </BotaoMenuBar>
           </div>
         </section>
 
@@ -277,4 +283,5 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
     </form>
   );
 }
+
 export default Formulario;

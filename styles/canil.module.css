@@ -13,13 +13,19 @@
   width: 100%;
   gap: 16px; /* espaço entre lista e painel */
   padding: 10px;
+
   max-width: 750px;
   max-height: 400px; /* ajuste conforme seu layout */
   width: 100%;
 }
 @media screen and (max-width: 600px) {
   .canil {
-    flex-direction: column; /* lista abaixo do painel */
+    flex-direction: column;
+    max-height: 100vh; /* nunca ultrapassa viewport */
+    overflow-y: auto;
+  }
+  .form_scroll_container {
+    min-width: 210px;
   }
   .list_panel {
     max-width: 100%; /* lista ocupa toda a largura */
@@ -27,7 +33,17 @@
   }
 
   .panel_data {
-    width: 100%; /* painel ocupa toda a largura */
+    max-height: 60vh; /* painel ocupa até 60% da altura da tela */
+    overflow-y: auto; /* permite rolar dentro do painel */
+    width: 100%; /* ocupa a largura da tela */
+    max-width: 100%; /* nunca passa da viewport */
+    min-width: unset;
+    min-height: 360px; /* remove o limite mínimo */
+    box-sizing: border-box; /* padding conta dentro da largura */
+  }
+
+  .panel_content {
+    flex-direction: column; /* evita forçar largura lateral */
   }
 }
 .list_panel {
