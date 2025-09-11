@@ -97,8 +97,13 @@ function FormResgate({ onSubmitSuccess, errorReturn }) {
     e.preventDefault();
     try {
       const form = e.target;
-      const image_url = await upload(form.imagem.files[0]);
-      log += "\nImagem enviada com sucesso,url:" + image_url;
+      let image_url = null;
+      if (form.imagem.files[0]) {
+        image_url = await upload(form.imagem.files[0]);
+        log += "\nImagem enviada com sucesso,url:" + image_url;
+      } else {
+        log += "\nNenhuma imagem enviada, usando URL padrão";
+      }
       const especie = form.especie.value;
       let especie_id = 3; // ID padrão para "outro"
       if (especie === "cachorro") especie_id = 1;

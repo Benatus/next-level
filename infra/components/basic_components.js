@@ -1,8 +1,6 @@
 const { useRouter } = require("next/router");
-const components = {
-  BotaoMenuBar,
-};
-function BotaoMenuBar({ children, destino }) {
+const components = {};
+export function BotaoMenuBar({ children, destino }) {
   const router = useRouter();
   const handleClick = () => {
     router.push(destino);

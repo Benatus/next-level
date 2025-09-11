@@ -106,7 +106,13 @@ function Lista({ list_object, set_form_data }) {
   return (
     <>
       <div className={styles.list_panel}>
-        <ul>{item_list}</ul>
+        <div className={styles.list_panel_header}>
+          <h3>Nome do Animal</h3>
+          <h3>Status</h3>
+        </div>
+        <div className={styles.list_panel_container}>
+          <ul>{item_list}</ul>
+        </div>
       </div>
     </>
   );
