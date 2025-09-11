@@ -52,18 +52,45 @@ body {
   align-items: center;
   gap: 1rem;
 }
-.icon_image {
-  width: 40px;
-  height: 40px;
+
+.icon_menu {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-direction: row;
+  margin-left: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  padding-right: 10px;
+  border-right: #0bb66688 2px solid;
+  min-width: 60px;
+  min-height: 60px;
+}
+
+.icon_menu:hover {
+  cursor: pointer;
+  opacity: 0.5;
+  background-color: #028347da;
+}
+
+.icon_menu div {
+  width: 60px;
+  height: 60px;
   background-color: white; /* substituir por logo real se houver */
   border-radius: 50%;
-  margin: 15px;
   background-image: url("../infra/imagens/home/cemsa_apucarana.jpg");
   background-size: cover;
 }
-
-.cemsa {
+.icon_menu h1 {
   font-size: 1.5rem;
   color: white;
   margin: 0;
+}
+@media (hover) {
+  .icon_menu:hover {
+    background: #006837; /* volta para a cor normal */
+    transform: none; /* remove o efeito */
+  }
 }

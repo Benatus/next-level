@@ -32,6 +32,11 @@ export default NextAuth({
         );
         console.log("É valido ?", isMatch);
         if (isMatch) {
+          console.log(
+            "Senha correta, retornando o usuário",
+            user.id,
+            user.name,
+          );
           return {
             id: user.id,
             name: user.name,

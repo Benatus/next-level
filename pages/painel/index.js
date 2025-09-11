@@ -1,5 +1,6 @@
 import styles from "styles/canil.module.css";
 import Image from "next/image";
+import { BotaoMenuBar } from "infra/components/basic_components";
 import { getSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 function Painel() {
@@ -56,8 +57,13 @@ function Painel() {
     <div className="container">
       <section className="menu_bar">
         <div className="display">
-          <div className="icon_image"></div>
-          <h1 className="cemsa">CEMSA</h1>
+          <BotaoMenuBar destino={"/painel"}>
+            <div></div>
+            <h1>CEMSA</h1>
+          </BotaoMenuBar>
+          <BotaoMenuBar destino={"/painel/resgate/formulario"}>
+            <h1>Resgate</h1>
+          </BotaoMenuBar>
         </div>
       </section>
       <section className={styles.center_area} key="canil_center_area">
@@ -100,7 +106,13 @@ function Lista({ list_object, set_form_data }) {
   return (
     <>
       <div className={styles.list_panel}>
-        <ul>{item_list}</ul>
+        <div className={styles.list_panel_header}>
+          <h3>Nome do Animal</h3>
+          <h3>Status</h3>
+        </div>
+        <div className={styles.list_panel_container}>
+          <ul>{item_list}</ul>
+        </div>
       </div>
     </>
   );
