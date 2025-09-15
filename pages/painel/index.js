@@ -33,10 +33,11 @@ function Painel() {
   // 2️⃣ Função para atualizar um animal (chamar a API PUT)
   const updateAnimal = async (animal) => {
     try {
+      const animal_json = JSON.stringify(animal);
       const response = await fetch(`/api/v1/animais`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(animal),
+        body: animal_json,
       });
       if (!response.ok) throw new Error("Erro ao atualizar animal");
       const updated = await response.json();
