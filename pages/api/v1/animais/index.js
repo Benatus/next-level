@@ -26,38 +26,37 @@ async function animail(req, res) {
 
 async function UpdateAnimal(animal) {
   try {
-    const animal_obj = JSON.parse(animal);
     // 1️⃣ Buscar o ID da espécie pelo nome
-    console.log("Atualizando animal:", animal_obj);
-    console.log("Buscando ID da espécie para:", animal_obj.especie);
+    console.log("Atualizando animal:", animal);
+    console.log("Buscando ID da espécie para:", animal.especie);
     const especieResult = await database.query({
       text: `SELECT id FROM especie WHERE LOWER(nome_especie) = LOWER($1)`,
-      values: [animal_obj.especie],
+      values: [animal.especie],
     });
 
     if (especieResult.rows.length === 0) {
-      throw new Error(`Espécie "${animal_obj.especie}" não encontrada`);
+      throw new Error(`Espécie "${animal.especie}" não encontrada`);
     }
 
     const especie_id = especieResult.rows[0].id;
     console.log("ID da espécie encontrada:", especie_id);
-    console.log("Buscando ID da raça para:", animal_obj.raca);
+    console.log("Buscando ID da raça para:", animal.raca);
     // 2️⃣ Buscar o ID da raça pelo nome
     const racaResult = await database.query({
       text: `SELECT id FROM raca WHERE LOWER(nome_raca) = LOWER($1) AND especie_id = $2`,
-      values: [animal_obj.raca, especie_id], // garante que a raça pertence à espécie correta
+      values: [animal.raca, especie_id], // garante que a raça pertence à espécie correta
     });
     let raca_id = null;
     if (racaResult.rows.length === 0) {
       console.log(
-        `Raça "${animal_obj.raca}" não encontrada para a espécie "${animal_obj.especie}"`,
+        `Raça "${animal.raca}" não encontrada para a espécie "${animal.especie}"`,
       );
     } else {
       raca_id = racaResult.rows[0].id;
     }
 
     console.log("ID da raça encontrada:", raca_id);
-    console.log("Atualizando animal_obj com ID:", animal_obj.id);
+    console.log("Atualizando animal com ID:", animal.id);
     // 3️⃣ Atualizar o animal
     const queryObject = {
       text: `
