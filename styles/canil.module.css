@@ -1,94 +1,115 @@
+/* styles/canil.module.css */
+
+/* --- ESTRUTURA PRINCIPAL --- */
+
+/* Área central abaixo do menu */
 .center_area {
   flex: 1;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   width: 100%;
+  height: 100%;
+  /* Padding inferior de 80px para garantir que o painel não cole no fundo da tela */
+  padding: 20px 20px 80px 20px;
+  overflow: hidden; /* Impede scroll na página inteira */
+  box-sizing: border-box;
 }
+
+/* O container principal dos painéis */
 .canil {
-  flex: 1;
   display: flex;
-  justify-content: center;
-  align-items: stretch; /* garante que os dois painéis tenham mesma altura */
+  flex-direction: row;
+  align-items: stretch;
   width: 100%;
-  gap: 16px; /* espaço entre lista e painel */
-  padding: 10px;
-
-  max-width: 750px;
-  max-height: 400px; /* ajuste conforme seu layout */
-  width: 100%;
+  max-width: 1200px;
+  height: 100%;
+  gap: 20px;
+  min-height: 0; /* Essencial para o Flexbox não vazar */
 }
-@media screen and (max-width: 600px) {
-  .canil {
-    flex-direction: column;
-    max-height: 100vh; /* nunca ultrapassa viewport */
-    overflow-y: auto;
-  }
-  .form_scroll_container {
-    min-width: 210px;
-  }
-  .list_panel {
-    max-width: 100%; /* lista ocupa toda a largura */
-    margin-top: 16px; /* espaçamento entre painel e lista */
-  }
 
-  .panel_data {
-    max-height: 60vh; /* painel ocupa até 60% da altura da tela */
-    overflow-y: auto; /* permite rolar dentro do painel */
-    width: 100%; /* ocupa a largura da tela */
-    max-width: 100%; /* nunca passa da viewport */
-    min-width: unset;
-    min-height: 360px; /* remove o limite mínimo */
-    box-sizing: border-box; /* padding conta dentro da largura */
-  }
-
-  .panel_content {
-    flex-direction: column; /* evita forçar largura lateral */
-  }
-}
-.list_panel {
+/* --- COLUNA DA DIREITA (Lista + Paginação) --- */
+.right_column {
   flex: 1;
-  max-width: 400px;
-  background-color: #f9f9f9;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
   display: flex;
   flex-direction: column;
+  gap: 15px;
+  min-width: 300px;
+  max-width: 400px;
+  height: 100%;
+  overflow: hidden;
 }
-.list_panel_container {
-  max-height: 50vh; /* altura máxima da lista no mobile */
-  overflow-y: auto; /* garante scroll */
-}
-.list_panel_header {
-  position: sticky;
-  top: 0; /* fixa no topo do panel */
-  z-index: 10;
 
-  display: grid;
-  grid-template-columns: 2fr 1fr; /* 50% Nome, 50% Status */
+/* BOTÃO ATUALIZAR (Estilo Gradiente) */
+.refresh_button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  /* Gradiente: Azul (#2cb3ff) para Verde (#3fe37a) */
+  background: linear-gradient(135deg, #2cb3ff 0%, #3fe37a 100%);
+  color: white;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s,
+    opacity 0.2s;
+
+  display: flex;
+  justify-content: center;
   align-items: center;
   gap: 8px;
-  padding: 12px 16px;
-  margin-bottom: 8px;
 
-  /* Mantendo o estilo visual anterior */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  flex: 0 0 auto; /* Tamanho fixo, não encolhe */
+}
+
+.refresh_button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(44, 179, 255, 0.3);
+  opacity: 0.95;
+}
+
+.refresh_button:active {
+  transform: translateY(0);
+}
+
+/* Painel da Lista */
+.list_panel {
+  flex: 1; /* Ocupa o resto do espaço vertical */
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 10px;
+  min-height: 0;
+}
+
+.list_panel_header {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 15px;
+  margin-bottom: 10px;
   background: linear-gradient(135deg, #2cb3ff, #3fe37a);
   color: #fff;
   font-size: 0.9rem;
   font-weight: bold;
-  border-radius: 12px; /* arredonda apenas o topo */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
 }
 
-.list_panel_header h3 {
-  margin: 0;
-  padding: 0;
-  font-size: 1rem; /* opcional, para controlar tamanho */
+.list_panel_container {
+  flex: 1;
+  overflow-y: auto; /* Scroll da lista */
+  padding-right: 5px;
 }
 
-/* Remove bolinhas da lista e padding */
 .list_panel ul {
   list-style: none;
   padding: 0;
@@ -98,301 +119,306 @@
   gap: 8px;
 }
 
-.list_panel_container {
-  flex: 1; /* ocupa o espaço restante */
-  overflow-y: auto;
-}
-
-/* Cada item da lista */
 .list_item {
-  display: flex;
   width: 100%;
 }
 
-/* Botão estilizado */
 .button_list {
   display: flex;
-  text-align: left;
-  background-color: #4a90e2;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background-color 0.2s,
-    transform 0.1s;
+  align-items: center;
   width: 100%;
-  padding: 10px;
-  font-size: 14px;
-  justify-content: center;
+  padding: 12px;
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
-/* Hover e active para interação */
+
 .button_list:hover {
-  background-color: #357ab7;
-}
-
-.button_list:active {
-  transform: scale(0.98);
-}
-
-.item_status {
-  width: 60px;
-  height: 22px;
-  border-radius: 15px;
-
-  background-color: #4caf50; /* Cor verde */
-  margin-left: 4px;
-  align-content: center;
+  background-color: #f0f8ff;
+  border-color: #2cb3ff;
+  transform: translateX(3px);
 }
 
 .div_button_1 {
-  display: flex;
-  align-content: center;
-  justify-content: left;
-  width: 100%;
-}
-.div_button_2 {
-  display: flex;
-  text-align: center;
-  align-content: center;
-  justify-content: right;
-  width: 100%;
+  flex: 1;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
 }
 
+.item_status {
+  padding: 4px 10px;
+  border-radius: 12px;
+  background-color: #4caf50;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+/* Paginação Fixa */
+.pagination_container {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pagination_button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background-color: #006837;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+.pagination_button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+.pagination_info {
+  font-weight: bold;
+  color: #333;
+}
+
+/* --- PAINEL DA ESQUERDA (Detalhes) --- */
 .panel_data {
-  flex: 1.5;
+  flex: 2;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-
   padding: 20px;
   border-radius: 16px;
-
-  /* Fundo neutro mas translúcido para não brigar com o gradiente */
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(6px);
-  min-width: 320px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
-/* Cabeçalho */
 .panel_header {
   flex: 0 0 auto;
   width: 100%;
   text-align: center;
-  padding: 12px 16px;
-  border-radius: 12px;
-
-  background: linear-gradient(135deg, #2cb3ff, #3fe37a);
-  color: #fff;
-  font-size: 0.9rem;
-  font-weight: bold;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  margin-bottom: 16px;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #eee;
 }
 
-/* Conteúdo */
+.panel_header h2 {
+  color: #006837;
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+/* Conteúdo interno */
 .panel_content {
   flex: 1;
   display: flex;
-  width: 100%;
-  flex-direction: row;
-  gap: 16px;
-
-  background: #f3f9ff;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.08);
-
-  min-height: 0; /* evita overflow do flex */
+  gap: 20px;
   overflow: hidden;
+  min-height: 0;
 }
 
-/* Imagem */
-.image_container {
+/* Coluna da Imagem */
+.image_column {
   flex: 1;
-  background-color: #e8f7f1;
-  border: 2px dashed #3fe37a;
-  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  overflow-y: auto; /* Scroll se necessário */
+  padding-right: 5px;
+}
+
+.image_container {
+  flex: 0 0 200px;
+  height: 200px;
   width: 100%;
-  height: 100%;
+  background-color: #f0f0f0;
+  border: 2px dashed #ccc;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
-  color: #2cb3ff;
-  font-weight: 500;
-  position: relative;
-}
-.imagem {
-  width: 100%;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain; /* mantém proporção e cabe dentro do container */
+  cursor: zoom-in;
 }
 
-/* Formulário */
+.imagem {
+  object-fit: contain;
+}
+
+/* Botões abaixo da imagem */
+.buttons_container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+/* Coluna do Formulário */
+.form_column {
+  flex: 1.5;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.form_scroll_container {
+  flex: 1;
+  overflow-y: auto; /* Scroll dos campos */
+  padding-right: 10px;
+}
+
 .form_vertical {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 15px;
+  padding-bottom: 10px;
 }
+
 .form_vertical_div {
   display: flex;
   flex-direction: column;
 }
-.image_column {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  flex: 1;
-  gap: 12px; /* espaço entre imagem e botão */
-}
-.form_column {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  flex: 1.2;
-  gap: 12px;
-  min-height: 0;
-}
 
 .label_form {
+  font-size: 0.9rem;
+  color: #555;
   font-weight: 600;
-  color: #333;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
 }
 
 .input_text,
 .select_form {
   padding: 10px;
-  border: 1px solid #cce3f0;
-  border-radius: 8px;
-  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  width: 100%;
   box-sizing: border-box;
-
-  transition:
-    border 0.2s,
-    box-shadow 0.2s;
 }
 
-.input_text:focus,
-.select_form:focus {
-  border-color: #2cb3ff;
-  box-shadow: 0 0 6px rgba(44, 179, 255, 0.4);
-  outline: none;
+.input_text:disabled {
+  background-color: #f0f0f0;
+  color: #888;
 }
 
-.edit_button {
-  margin-bottom: 12px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  max-width: 200px;
+/* Botões de Ação */
+.action_button {
   width: 100%;
-
-  background: linear-gradient(135deg, #3fe37a, #2cb3ff);
-  color: #fff;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
-}
-
-.edit_button:hover {
-  transform: scale(1.03);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.save_button {
-  margin-bottom: 12px;
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 12px;
   border: none;
-  font-weight: 600;
+  border-radius: 8px;
+  font-weight: bold;
   cursor: pointer;
-  max-width: 200px;
+  color: white;
+  transition: 0.2s;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+/* Cores */
+.btn_blue {
+  background-color: #2cb3ff;
+}
+.btn_blue:hover {
+  background-color: #1a9ce0;
+}
+
+.btn_red {
+  background-color: #ff4d4d;
+}
+.btn_red:hover {
+  background-color: #d32f2f;
+}
+
+.btn_green {
+  background-color: #006837;
+  margin-top: 10px;
+}
+.btn_green:hover {
+  background-color: #00522b;
+}
+
+/* MODAL */
+.modal_overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
-
-  background: linear-gradient(135deg, #3fe37a, #2cb3ff);
-  color: #fff;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
-}
-
-.save_button:hover {
-  background: #2391cc;
-  transform: scale(1.05);
-}
-
-/* Área do formulário que rola */
-.form_scroll_container {
-  flex: 1;
-  overflow-y: auto; /* scroll vertical apenas aqui */
-  min-height: 0; /* importante para flexbox */
-}
-
-/* ... seu código existente ... */
-
-/* --- NOVOS ESTILOS PARA A BARRA DE NAVEGAÇÃO --- */
-
-/* Container dos links de navegação (Resgate, Canil, etc) */
-.menu_nav {
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 9999;
   display: flex;
-  flex: 1; /* Ocupa o espaço central */
   justify-content: center;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap; /* Quebra linha se a tela for muito pequena */
 }
 
-/* O texto dentro dos botões de navegação */
-.nav_text {
-  color: #e8f5e9; /* Branco levemente esverdeado */
-  font-weight: bold;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin: 0;
-  padding: 0 5px;
-}
-
-/* Container do Título da Página (Direita) */
-.page_title_container {
-  border-left: 2px solid rgba(255, 255, 255, 0.3);
-  padding-left: 15px;
-  min-width: 150px;
+.modal_content {
+  position: relative;
+  width: 80vw;
+  height: 80vh;
   display: flex;
+  justify-content: center;
   align-items: center;
-  justify-content: flex-end;
 }
 
-.page_title {
-  font-size: 1.4rem;
-  margin: 0;
+.modal_close_button {
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #ff4d4d;
   color: white;
-  text-align: right;
+  border: 2px solid white;
   font-weight: bold;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  font-size: 1.2rem;
+  z-index: 10000;
 }
 
-/* Ajuste responsivo para telas pequenas */
-@media screen and (max-width: 768px) {
-  .menu_nav {
-    display: none; /* Oculta menu superior no mobile para não quebrar layout */
-    /* Idealmente aqui você colocaria um menu hambúrguer */
+/* MOBILE */
+@media screen and (max-width: 900px) {
+  .canil {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
   }
-  .page_title_container {
-    border: none;
-    min-width: auto;
+
+  .center_area {
+    overflow-y: auto;
+    display: block;
+    padding-bottom: 80px;
   }
-  .page_title {
-    font-size: 1rem;
+
+  .panel_data,
+  .right_column {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-height: 500px;
+    margin-bottom: 20px;
+  }
+
+  .panel_content {
+    flex-direction: column;
+  }
+
+  .modal_close_button {
+    right: 0;
+    top: -60px;
   }
 }

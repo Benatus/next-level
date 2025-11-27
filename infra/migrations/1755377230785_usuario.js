@@ -1,25 +1,25 @@
-/**
- * @type {import('node-pg-migrate').ColumnDefinitions | undefined}
- */
-/* eslint-disable camelcase */
+/* infra/migrations/1755377230785_usuario.js */
+const bcrypt = require("bcryptjs"); // Importação do bcryptjs
 
 exports.shorthands = undefined;
 
 exports.up = (pgm) => {
-  pgm.createTable("users", {
+  pgm.createTable("usuario", {
     id: "id",
-    name: { type: "varchar(100)", notNull: true },
-    email: { type: "varchar(255)", notNull: false, unique: true },
-    password: { type: "varchar(80)", notNull: true },
+    nome: { type: "varchar(100)", notNull: true, unique: true },
+    senha: { type: "varchar(80)", notNull: true },
     criado_em: { type: "timestamp", default: pgm.func("current_timestamp") },
   });
 
+  // Gera o hash usando bcryptjs
+  const hashAdmin = bcrypt.hashSync("admin01", 10);
+
   pgm.sql(`
-    INSERT INTO users (name, password, email)
-    VALUES ('admin', '$2b$10$1WL7tXzLY9aY8mlsotrHLuuuMjfG7kCrpFoCXGfwkJjmjGxlEARSi','admin@email.com');
+    INSERT INTO usuario (nome, senha)
+    VALUES ('admin', '${hashAdmin}');
   `);
 };
 
 exports.down = (pgm) => {
-  pgm.dropTable("users");
+  pgm.dropTable("usuario");
 };

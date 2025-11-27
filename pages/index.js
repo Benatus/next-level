@@ -4,26 +4,42 @@ import { signIn, getSession } from "next-auth/react";
 
 function Home() {
   const router = useRouter();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const login = e.target;
 
     const data = {
-      email: login.usuario.value,
+      nome: login.usuario.value,
       senha: login.senha.value,
     };
-    const result = await signIn("Credentials", {
-      redirect: false,
-      email: data.email,
-      password: data.senha,
-    });
-    console.log("RESULTADO", result);
-    if (!result.error) {
-      router.push("/painel");
-    } else {
-      window.alert("Erro de login:", result.error);
+
+    try {
+      const result = await signIn("credentials", {
+        redirect: false,
+        nome: data.nome,
+        password: data.senha,
+      });
+
+      // Proteção contra retorno undefined
+      if (!result) {
+        window.alert("Erro de conexão com o servidor.");
+        return;
+      }
+
+      if (!result.error) {
+        router.push("/painel");
+      } else {
+        // Exibe o erro de forma amigável
+        window.alert("Falha no login: Usuário ou senha incorretos.");
+        console.error("Erro detalhado:", result.error);
+      }
+    } catch (err) {
+      window.alert("Ocorreu um erro inesperado ao tentar fazer login.");
+      console.error(err);
     }
   };
+
   return (
     <>
       <div className={styles.container}>
@@ -44,7 +60,8 @@ function Home() {
                 name="usuario"
                 className={styles.input_text}
                 type="text"
-                placeholder="Digite seu email aqui"
+                placeholder="Digite seu nome de usuário"
+                required
               ></input>
               <label className={styles.input_legend} htmlFor="senha">
                 Senha
@@ -54,7 +71,8 @@ function Home() {
                 name="senha"
                 className={styles.input_text}
                 type="password"
-                placeholder="Digite sua senha aqui"
+                placeholder="Digite sua senha"
+                required
               ></input>
               <input
                 className={styles.input_submit}
@@ -77,7 +95,7 @@ export async function getServerSideProps(context) {
   if (session) {
     return {
       redirect: {
-        destination: "/painel", // já logado → vai pro painel
+        destination: "/painel",
         permanent: false,
       },
     };

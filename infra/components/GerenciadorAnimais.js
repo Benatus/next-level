@@ -1,46 +1,110 @@
 import styles from "styles/canil.module.css";
 import Image from "next/image";
-import { useState, useEffect, useCallback } from "react";
-import { BotaoMenuBar } from "infra/components/basic_components";
-// Removi o import do useRouter pois não é usado
+import { useState, useEffect, useCallback, useRef } from "react";
+import { MenuBar } from "infra/components/basic_components";
+import { useSession } from "next-auth/react";
+
+// Constantes
+const CACHE_PREFIX = "cemsa_cache_";
+const CACHE_DURATION = 5 * 60 * 1000;
+
+function formatDate(dateString) {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return date.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export default function GerenciadorAnimais({ filtroStatus, titulo }) {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "admin";
+
   const [form_data, setFormData] = useState({});
   const [list_object, setListObject] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Removi const router = useRouter();
 
-  // 1. Busca de dados (READ)
-  const fetchAnimals = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await fetch("/api/v1/animais");
-      if (!response.ok) throw new Error("Erro ao buscar animais");
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-      const json = await response.json();
-      let data = json.data || [];
+  const getCacheKey = useCallback(
+    (pageNum) => {
+      const filterKey = filtroStatus ? filtroStatus.toLowerCase() : "geral";
+      return `${CACHE_PREFIX}${filterKey}_page_${pageNum}`;
+    },
+    [filtroStatus],
+  );
 
-      if (filtroStatus) {
-        data = data.filter(
-          (animal) =>
-            animal.status?.toLowerCase() === filtroStatus.toLowerCase(),
-        );
-      }
+  const saveToCache = useCallback(
+    (pageNum, data) => {
+      const cacheData = { timestamp: Date.now(), data: data };
+      localStorage.setItem(getCacheKey(pageNum), JSON.stringify(cacheData));
+    },
+    [getCacheKey],
+  );
 
-      setListObject(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  const clearCache = useCallback(() => {
+    const filterKey = filtroStatus ? filtroStatus.toLowerCase() : "geral";
+    Object.keys(localStorage).forEach((key) => {
+      if (key.includes(`${CACHE_PREFIX}${filterKey}`))
+        localStorage.removeItem(key);
+    });
   }, [filtroStatus]);
 
-  useEffect(() => {
-    fetchAnimals();
-  }, [fetchAnimals]);
+  const fetchAnimals = useCallback(
+    async (pageNum = 1, forceUpdate = false) => {
+      setLoading(true);
+      setError(null);
+      try {
+        if (!forceUpdate) {
+          const cachedItem = localStorage.getItem(getCacheKey(pageNum));
+          if (cachedItem) {
+            const { timestamp, data } = JSON.parse(cachedItem);
+            if (Date.now() - timestamp < CACHE_DURATION) {
+              setListObject(data);
+              setHasMore(data.length === 15);
+              setLoading(false);
+              return;
+            }
+          }
+        }
+        let url = `/api/v1/animais?page=${pageNum}&limit=15`;
+        if (filtroStatus) url += `&status=${filtroStatus}`;
 
-  // 2. Atualização (UPDATE)
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Erro ao buscar animais");
+        const json = await response.json();
+        let data = json.data || [];
+
+        saveToCache(pageNum, data);
+        setListObject(data);
+        setHasMore(data.length === 15);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [filtroStatus, getCacheKey, saveToCache],
+  );
+
+  useEffect(() => {
+    fetchAnimals(page, false);
+  }, [fetchAnimals, page]);
+
+  const handleNextPage = () => setPage((p) => p + 1);
+  const handlePrevPage = () => setPage((p) => Math.max(1, p - 1));
+
+  const handleRefresh = () => {
+    clearCache();
+    fetchAnimals(page, true);
+  };
+
   const updateAnimal = async (animal) => {
     try {
       const response = await fetch(`/api/v1/animais`, {
@@ -48,61 +112,55 @@ export default function GerenciadorAnimais({ filtroStatus, titulo }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(animal),
       });
+      if (!response.ok) throw new Error("Erro ao atualizar");
+      const json = await response.json();
+      const updated = json.data || json;
 
-      if (!response.ok) throw new Error("Erro ao atualizar animal");
-
-      const responseJson = await response.json();
-      const updated = responseJson.data || responseJson;
-
-      // Atualiza a lista lateral
-      setListObject((prevList) =>
-        prevList.map((a) => (a.id === updated.id ? updated : a)),
+      const newList = list_object.map((a) =>
+        a.id === updated.id ? updated : a,
       );
+      setListObject(newList);
+      saveToCache(page, newList);
 
-      // Atualiza o item aberto no painel central se for o mesmo ID
-      if (form_data && form_data.id === updated.id) {
-        setFormData(updated);
-      }
+      if (form_data && form_data.id === updated.id) setFormData(updated);
 
-      // Se mudou de status e saiu do filtro atual (ex: saiu do Canil)
       if (
         filtroStatus &&
         updated.status?.toLowerCase() !== filtroStatus.toLowerCase()
       ) {
-        setListObject((prev) => prev.filter((a) => a.id !== updated.id));
-        setFormData({}); // Limpa o painel
-        alert(`Registro salvo! Animal movido para: ${updated.status}`);
-      } else {
-        alert("Dados atualizados com sucesso!");
+        const filteredList = list_object.filter((a) => a.id !== updated.id);
+        setListObject(filteredList);
+        saveToCache(page, filteredList);
+        setFormData({});
       }
+      alert("Dados atualizados com sucesso!");
     } catch (err) {
-      console.error(err);
-      alert("Erro ao atualizar: " + err.message);
+      alert(err.message);
     }
   };
 
-  // 3. Exclusão (DELETE)
   const deleteAnimal = async (id) => {
-    if (
-      !confirm("Tem certeza que deseja excluir este registro permanentemente?")
-    )
+    if (!isAdmin) {
+      alert("Apenas administradores.");
       return;
-
+    }
+    if (!confirm("Excluir permanentemente?")) return;
     try {
       const response = await fetch(`/api/v1/animais?id=${id}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Falha ao deletar");
-
-      setListObject((prev) => prev.filter((a) => a.id !== id));
+      const newList = list_object.filter((a) => a.id !== id);
+      setListObject(newList);
+      saveToCache(page, newList);
       setFormData({});
-      alert("Registro excluído.");
+      alert("Excluído.");
     } catch (err) {
-      alert("Erro ao deletar: " + err.message);
+      alert(err.message);
     }
   };
 
-  if (loading)
+  if (loading && list_object.length === 0)
     return (
       <div className={styles.center_area}>
         <p>Carregando...</p>
@@ -112,76 +170,66 @@ export default function GerenciadorAnimais({ filtroStatus, titulo }) {
     return (
       <div className={styles.center_area}>
         <p>Erro: {error}</p>
+        <button onClick={handleRefresh}>Tentar</button>
       </div>
     );
 
   return (
     <div className="container">
-      <section className="menu_bar">
-        <div className="display">
-          {/* Logo / Home */}
-          <BotaoMenuBar destino={"/painel"}>
-            <div></div>
-            <h1>CEMSA</h1>
-          </BotaoMenuBar>
-
-          {/* Navegação Central Estilizada */}
-          <div className={styles.menu_nav}>
-            <BotaoMenuBar destino={"/painel/resgate"}>
-              <span className={styles.nav_text}>Resgate</span>
-            </BotaoMenuBar>
-
-            <BotaoMenuBar destino={"/painel/canil"}>
-              <span className={styles.nav_text}>Canil</span>
-            </BotaoMenuBar>
-
-            <BotaoMenuBar destino={"/painel/clinica"}>
-              <span className={styles.nav_text}>Clínica</span>
-            </BotaoMenuBar>
-
-            <BotaoMenuBar destino={"/painel/adocao"}>
-              <span className={styles.nav_text}>Adoção</span>
-            </BotaoMenuBar>
-
-            <BotaoMenuBar destino={"/painel/obito"}>
-              <span className={styles.nav_text}>Óbito</span>
-            </BotaoMenuBar>
-          </div>
-
-          {/* Título da Página Atual */}
-          <div className={styles.page_title_container}>
-            <h1 className={styles.page_title}>{titulo}</h1>
-          </div>
-        </div>
-      </section>
-
+      <MenuBar titulo={titulo} />
       <section className={styles.center_area}>
         <div className={styles.canil}>
           <PanelData
             form_data={form_data}
             updateAnimal={updateAnimal}
             deleteAnimal={deleteAnimal}
+            isAdmin={isAdmin}
           />
-          <Lista list_object={list_object} set_form_data={setFormData} />
+
+          <div className={styles.right_column}>
+            <button
+              onClick={handleRefresh}
+              className={styles.refresh_button}
+              title="Atualizar"
+            >
+              🔄 Atualizar Lista
+            </button>
+            <Lista list_object={list_object} set_form_data={setFormData} />
+            <div className={styles.pagination_container}>
+              <button
+                onClick={handlePrevPage}
+                disabled={page === 1}
+                className={styles.pagination_button}
+              >
+                Anterior
+              </button>
+              <span className={styles.pagination_info}>Pág {page}</span>
+              <button
+                onClick={handleNextPage}
+                disabled={!hasMore}
+                className={styles.pagination_button}
+              >
+                Próxima
+              </button>
+            </div>
+          </div>
         </div>
       </section>
     </div>
   );
 }
 
-// --- SUBCOMPONENTES ---
-
 function Lista({ list_object, set_form_data }) {
   return (
     <div className={styles.list_panel}>
       <div className={styles.list_panel_header}>
-        <h3>Nome do Animal</h3>
+        <h3>ID / Nome</h3>
         <h3>Status</h3>
       </div>
       <div className={styles.list_panel_container}>
         <ul>
           {list_object.map((item) => (
-            <li className={styles.list_item} key={String(item.id) + item.nome}>
+            <li className={styles.list_item} key={String(item.id)}>
               <button
                 className={styles.button_list}
                 onClick={() => set_form_data(item)}
@@ -199,224 +247,403 @@ function Lista({ list_object, set_form_data }) {
   );
 }
 
-// Removi 'list_object' dos props e 'set_form_data' que não estava sendo usado aqui dentro
-function PanelData({ form_data, updateAnimal, deleteAnimal }) {
+function PanelData({ form_data, updateAnimal, deleteAnimal, isAdmin }) {
   const [editable, setEditable] = useState(false);
   const [localData, setLocalData] = useState(form_data || {});
+  const [newImageFile, setNewImageFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     setLocalData(form_data || {});
     setEditable(false);
+    setNewImageFile(null);
+    setPreviewUrl(null);
+    setShowModal(false);
   }, [form_data]);
 
-  const handleSave = async () => {
-    await updateAnimal(localData);
-    setEditable(false);
+  async function upload(imagem) {
+    const formData = new FormData();
+    formData.append("imagem", imagem);
+    const response = await fetch("/api/v1/upload", {
+      method: "POST",
+      duplex: "half",
+      body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+    return data.url;
+  }
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewImageFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
   };
+
+  const handleSave = async () => {
+    let dataToSave = { ...localData };
+    if (newImageFile) {
+      try {
+        const imageUrl = await upload(newImageFile);
+        dataToSave.imagem_url = imageUrl;
+      } catch (error) {
+        alert("Erro upload");
+        return;
+      }
+    }
+    await updateAnimal(dataToSave);
+    setEditable(false);
+    setNewImageFile(null);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+  };
+
+  const triggerFileInput = () => fileInputRef.current?.click();
 
   if (!form_data || !form_data.id) {
     return (
       <div className={styles.panel_data}>
         <div className={styles.panel_header}>
-          <h2>Detalhes do Animal</h2>
+          <h2>Detalhes</h2>
         </div>
         <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
-          <p>Selecione um animal na lista para visualizar ou editar.</p>
+          <p>Selecione um animal na lista.</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className={styles.panel_data}>
-      <div className={styles.panel_header}>
-        <h2>{localData.nome || "Detalhes"}</h2>
-      </div>
+  const imageSrc = previewUrl || localData.imagem_url;
 
-      <div className={styles.panel_content}>
-        <div className={styles.image_column}>
-          <div className={styles.image_container}>
-            {localData.imagem_url ? (
-              <Image
-                alt="Foto do Animal"
-                src={localData.imagem_url}
-                width={250}
-                height={250}
-                className={styles.imagem}
-                style={{ objectFit: "contain" }}
+  return (
+    <>
+      <div className={styles.panel_data}>
+        <div className={styles.panel_header}>
+          <h2>{localData.nome || "Detalhes"}</h2>
+        </div>
+
+        <div className={styles.panel_content}>
+          <div className={styles.image_column}>
+            <div
+              className={styles.image_container}
+              onClick={() => {
+                if (imageSrc) setShowModal(true);
+              }}
+              title="Ampliar"
+            >
+              {imageSrc ? (
+                <Image
+                  alt="Foto"
+                  src={imageSrc}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 200px"
+                  className={styles.imagem}
+                  style={{ objectFit: "contain" }}
+                />
+              ) : (
+                <span>Sem Foto</span>
+              )}
+            </div>
+
+            <div className={styles.buttons_container}>
+              {isAdmin && editable && (
+                <>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    style={{ display: "none" }}
+                    onChange={handleFileChange}
+                  />
+                  <button
+                    type="button"
+                    className={`${styles.action_button} ${styles.btn_blue}`}
+                    onClick={triggerFileInput}
+                  >
+                    Trocar Foto
+                  </button>
+                </>
+              )}
+
+              {isAdmin && (
+                <button
+                  type="button"
+                  className={`${styles.action_button} ${editable ? styles.btn_red : styles.btn_blue}`}
+                  onClick={() => {
+                    if (editable) {
+                      setEditable(false);
+                      setNewImageFile(null);
+                      setPreviewUrl(null);
+                      setLocalData(form_data);
+                    } else {
+                      setEditable(true);
+                    }
+                  }}
+                >
+                  {editable ? "Cancelar" : "Editar"}
+                </button>
+              )}
+
+              {isAdmin && (
+                <button
+                  type="button"
+                  className={`${styles.action_button} ${styles.btn_red}`}
+                  onClick={() => deleteAnimal(localData.id)}
+                >
+                  Excluir
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className={styles.form_column}>
+            <div className={styles.form_scroll_container}>
+              <VerticalForm
+                localData={localData}
+                setLocalData={setLocalData}
+                editable={editable}
               />
-            ) : (
-              <span>Sem Foto</span>
+            </div>
+            {isAdmin && editable && (
+              <button
+                type="button"
+                className={`${styles.action_button} ${styles.btn_green}`}
+                onClick={handleSave}
+              >
+                Salvar Alterações
+              </button>
             )}
           </div>
-
-          <button
-            type="button"
-            className={styles.edit_button}
-            onClick={() => setEditable(!editable)}
-          >
-            {editable ? "Cancelar Edição" : "Editar"}
-          </button>
-
-          <button
-            type="button"
-            style={{
-              backgroundColor: "#ff4d4d",
-              color: "white",
-              marginTop: "10px",
-            }}
-            className={styles.edit_button}
-            onClick={() => deleteAnimal(localData.id)}
-          >
-            Excluir
-          </button>
-        </div>
-
-        <div className={styles.form_column}>
-          <div className={styles.form_scroll_container}>
-            <VerticalForm
-              localData={localData}
-              setLocalData={setLocalData}
-              editable={editable}
-            />
-          </div>
-
-          {editable && (
-            <button
-              type="button"
-              className={styles.save_button}
-              onClick={handleSave}
-            >
-              Salvar Alterações
-            </button>
-          )}
         </div>
       </div>
-    </div>
+
+      {showModal && imageSrc && (
+        <div
+          className={styles.modal_overlay}
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className={styles.modal_content}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Image
+              alt="Zoom"
+              src={imageSrc}
+              fill
+              style={{ objectFit: "contain" }}
+              sizes="80vw"
+              quality={100}
+            />
+            <button
+              className={styles.modal_close_button}
+              onClick={() => setShowModal(false)}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
+// --- FORMULÁRIO COM SEÇÕES E MÁSCARA ---
 function VerticalForm({ localData, setLocalData, editable }) {
-  const keys = Object.keys(localData).filter(
-    (key) =>
-      key !== "id" &&
-      key !== "imagem_url" &&
-      key !== "created_at" &&
-      key !== "updated_at",
-  );
+  // Função padrão para inputs genéricos
+  const handleChange = (e) =>
+    setLocalData((prev) => ({ ...prev, [e.target.id]: e.target.value }));
 
-  const handleChange = (e) => {
-    const { id, value } = e.target;
-    setLocalData((prev) => ({ ...prev, [id]: value }));
+  // Função com Máscara de Telefone (XX)XXXXX-XXXX
+  const handlePhoneChange = (e) => {
+    let value = e.target.value.replace(/\D/g, ""); // Remove tudo que não é dígito
+    if (value.length > 11) value = value.slice(0, 11); // Limita a 11 números
+
+    // Aplica a máscara (XX)XXXXX-XXXX
+    if (value.length > 7) {
+      value = `(${value.slice(0, 2)})${value.slice(2, 7)}-${value.slice(7)}`;
+    } else if (value.length > 2) {
+      value = `(${value.slice(0, 2)})${value.slice(2)}`;
+    }
+
+    setLocalData((prev) => ({ ...prev, [e.target.id]: value }));
   };
+
+  // Helper para renderizar input texto
+  const renderInput = (id, label, customChange) => (
+    <div key={id} className={styles.form_vertical_div}>
+      <label htmlFor={id} className={styles.label_form}>
+        {label}
+      </label>
+      <input
+        id={id}
+        type="text"
+        value={localData[id] || ""}
+        onChange={customChange || handleChange}
+        disabled={!editable}
+        className={styles.input_text}
+        maxLength={id === "telefone_solicitante" ? 14 : undefined} // Limite visual
+      />
+    </div>
+  );
 
   return (
     <form className={styles.form_vertical}>
-      {keys.map((key) => {
-        if (key === "sexo") {
-          return (
-            <div key={key} className={styles.form_vertical_div}>
-              <label htmlFor={key} className={styles.label_form}>
-                {key}
-              </label>
-              <select
-                id={key}
-                value={localData[key]?.toLowerCase() || ""}
-                onChange={handleChange}
-                disabled={!editable}
-                className={styles.select_form}
-              >
-                <option value="macho">Macho</option>
-                <option value="femea">Fêmea</option>
-                <option value="nao_identificado">Não identificado</option>
-              </select>
-            </div>
-          );
-        }
+      {/* SEÇÃO 1: DADOS DO ANIMAL */}
+      <h3
+        style={{
+          fontSize: "1rem",
+          color: "#006837",
+          borderBottom: "1px solid #ccc",
+          marginTop: 0,
+        }}
+      >
+        Dados do Animal
+      </h3>
 
-        if (key === "status") {
-          return (
-            <div key={key} className={styles.form_vertical_div}>
-              <label htmlFor={key} className={styles.label_form}>
-                Status (Mover para)
-              </label>
-              <select
-                id={key}
-                value={localData[key] || ""}
-                onChange={handleChange}
-                disabled={!editable}
-                className={styles.select_form}
-                style={{ fontWeight: "bold", color: "#2cb3ff" }}
-              >
-                <option value="Resgatado">Resgatado</option>
-                <option value="Canil">Canil</option>
-                <option value="Em Tratamento">Em Tratamento</option>
-                <option value="Adocao">Adoção</option>
-                <option value="Obito">Óbito</option>
-              </select>
-            </div>
-          );
-        }
+      <div className={styles.form_vertical_div}>
+        <label className={styles.label_form}>Criado em</label>
+        <input
+          type="text"
+          value={formatDate(localData.criado_em)}
+          disabled
+          className={styles.input_text}
+          style={{ backgroundColor: "#eee" }}
+        />
+      </div>
 
-        if (key === "especie") {
-          return (
-            <div key={key} className={styles.form_vertical_div}>
-              <label htmlFor={key} className={styles.label_form}>
-                {key}
-              </label>
-              <select
-                id={key}
-                value={localData[key]?.toLowerCase() || ""}
-                onChange={handleChange}
-                disabled={!editable}
-                className={styles.select_form}
-              >
-                <option value="cachorro">Cachorro</option>
-                <option value="gato">Gato</option>
-                <option value="outro">Outro</option>
-              </select>
-            </div>
-          );
-        }
+      <div className={styles.form_vertical_div}>
+        <label htmlFor="especie" className={styles.label_form}>
+          Espécie
+        </label>
+        <select
+          id="especie"
+          value={localData.especie || "Outro"}
+          onChange={handleChange}
+          disabled={!editable}
+          className={styles.select_form}
+        >
+          <option value="Cachorro">Cachorro</option>
+          <option value="Gato">Gato</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
 
-        if (key === "idade") {
-          return (
-            <div key={key} className={styles.form_vertical_div}>
-              <label htmlFor={key} className={styles.label_form}>
-                {key}
-              </label>
-              <select
-                id={key}
-                value={localData[key]?.toLowerCase() || ""}
-                onChange={handleChange}
-                disabled={!editable}
-                className={styles.select_form}
-              >
-                <option value="filhote">Filhote</option>
-                <option value="jovem">Jovem</option>
-                <option value="adulto">Adulto</option>
-                <option value="idoso">Idoso</option>
-              </select>
-            </div>
-          );
-        }
+      <div className={styles.form_vertical_div}>
+        <label htmlFor="sexo" className={styles.label_form}>
+          Sexo
+        </label>
+        <select
+          id="sexo"
+          value={localData.sexo || ""}
+          onChange={handleChange}
+          disabled={!editable}
+          className={styles.select_form}
+        >
+          <option value="macho">Macho</option>
+          <option value="femea">Fêmea</option>
+          <option value="nao_identificado">Não identificado</option>
+        </select>
+      </div>
 
-        return (
-          <div key={key} className={styles.form_vertical_div}>
-            <label htmlFor={key} className={styles.label_form}>
-              {key}
-            </label>
-            <input
-              id={key}
-              type="text"
-              value={localData[key] || ""}
-              onChange={handleChange}
-              disabled={!editable}
-              className={styles.input_text}
-            />
-          </div>
-        );
-      })}
+      <div className={styles.form_vertical_div}>
+        <label htmlFor="status" className={styles.label_form}>
+          Status
+        </label>
+        <select
+          id="status"
+          value={localData.status || ""}
+          onChange={handleChange}
+          disabled={!editable}
+          className={styles.select_form}
+          style={{ fontWeight: "bold", color: "#2cb3ff" }}
+        >
+          <option value="Resgatado">Resgatado</option>
+          <option value="Canil">Canil</option>
+          <option value="Em Tratamento">Em Tratamento</option>
+          <option value="Adocao">Adoção</option>
+          <option value="Obito">Óbito</option>
+        </select>
+      </div>
+
+      {/* SEÇÃO 2: DADOS DO RESGATE */}
+      <h3
+        style={{
+          fontSize: "1rem",
+          color: "#006837",
+          borderBottom: "1px solid #ccc",
+          marginTop: "15px",
+        }}
+      >
+        Dados do Resgate
+      </h3>
+
+      {renderInput("local", "Local do Resgate")}
+      {renderInput("agente", "Responsável (Agente)")}
+
+      <div className={styles.form_vertical_div}>
+        <label htmlFor="destino" className={styles.label_form}>
+          Destino
+        </label>
+        <select
+          id="destino"
+          value={localData.destino || "CMSA"}
+          onChange={handleChange}
+          disabled={!editable}
+          className={styles.select_form}
+        >
+          <option value="CMSA">CMSA</option>
+          <option value="Clinica">Clínica</option>
+        </select>
+      </div>
+
+      {renderInput("solicitante", "Solicitante")}
+
+      {/* APLICAÇÃO DA MÁSCARA AQUI */}
+      {renderInput(
+        "telefone_solicitante",
+        "Telefone do Solicitante",
+        handlePhoneChange,
+      )}
+
+      <div className={styles.form_vertical_div}>
+        <label htmlFor="animal_de_rua" className={styles.label_form}>
+          Animal de Rua?
+        </label>
+        <select
+          id="animal_de_rua"
+          value={localData.animal_de_rua ? "sim" : "nao"}
+          onChange={(e) =>
+            setLocalData((prev) => ({
+              ...prev,
+              animal_de_rua: e.target.value === "sim",
+            }))
+          }
+          disabled={!editable}
+          className={styles.select_form}
+        >
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+        </select>
+      </div>
+
+      <div className={styles.form_vertical_div}>
+        <label htmlFor="observacao" className={styles.label_form}>
+          Observação
+        </label>
+        <textarea
+          id="observacao"
+          value={localData.observacao || ""}
+          onChange={handleChange}
+          disabled={!editable}
+          className={styles.input_text}
+          rows={3}
+          style={{ resize: "vertical" }}
+        />
+      </div>
     </form>
   );
 }
