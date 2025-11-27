@@ -1,68 +1,52 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import database from "infra/database";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcryptjs"; // MUDANÇA: bcryptjs
 
 export default NextAuth({
   providers: [
     CredentialsProvider({
-      name: "Credentials",
-      id: "Credentials",
-      type: "credentials",
+      name: "credentials", // minúsculo por convenção
       credentials: {
-        email: { label: "user", type: "text" },
-        password: { label: "password", type: "password" },
+        nome: { label: "Usuário", type: "text" },
+        password: { label: "Password", type: "password" },
       },
-
       async authorize(credentials) {
-        console.log("entrou na função autorize");
-        let user = await findUserByEmail(credentials.email);
-        console.log("buscou o usuario");
-        if (user.length === 0) {
-          console.log("não encontrou o usuário");
+        try {
+          const result = await database.query({
+            text: "SELECT id, senha, nivel_acesso, nome FROM usuario WHERE nome = $1",
+            values: [credentials.nome],
+          });
+
+          const user = result.rows[0];
+
+          if (user && bcrypt.compareSync(credentials.password, user.senha)) {
+            return {
+              id: user.id,
+              name: user.nome,
+              role: user.nivel_acesso,
+            };
+          }
           return null;
-        } else {
-          console.log("encontrou e convertou o resutado em um objeto ");
-          user = user[0];
-        }
-        console.log("USUARIO", user);
-        const isMatch = await bcrypt.compare(
-          credentials.password,
-          user.password,
-        );
-        console.log("É valido ?", isMatch);
-        if (isMatch) {
-          console.log(
-            "Senha correta, retornando o usuário",
-            user.id,
-            user.name,
-          );
-          return {
-            id: user.id,
-            name: user.name,
-          };
-        } else {
+        } catch (error) {
+          console.error("Erro na autenticação:", error);
           return null;
         }
       },
     }),
   ],
-  session: {
-    strategy: "jwt", // ou "database" se usar persistência
-    maxAge: 60 * 60 * 24, // ⏰ 24 horas
-    updateAge: 60 * 60, // ⏰ a cada 1 hora o token é revalidado
+  pages: {
+    signIn: "/",
   },
-
-  // 🔹 Configuração do JWT
-  jwt: {
-    maxAge: 60 * 60 * 24 * 7, // ⏰ 7 dias (se não tiver refresh)
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) token.role = user.role;
+      return token;
+    },
+    async session({ session, token }) {
+      session.user.role = token.role;
+      return session;
+    },
   },
   secret: process.env.NEXTAUTH_SECRET,
 });
-async function findUserByEmail(email) {
-  const result = await database.query({
-    text: `SELECT id,name,email,password FROM USERS WHERE email = $1;`,
-    values: [email],
-  });
-  return result.rows;
-}

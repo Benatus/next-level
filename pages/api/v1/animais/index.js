@@ -1,190 +1,216 @@
 import database from "infra/database";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+);
+
+async function deleteImageFromStorage(url) {
+  if (!url) return;
+  try {
+    const parts = url.split("/imagens/");
+    if (parts.length >= 2) {
+      const fileName = decodeURIComponent(parts[1]);
+      const { error } = await supabase.storage
+        .from("imagens")
+        .remove([fileName]);
+      if (error) console.error("Erro ao deletar:", error);
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function validarEspecie(especieInput) {
+  const permitidos = ["Cachorro", "Gato", "Outro"];
+  if (!especieInput) return "Outro";
+  const formatado =
+    especieInput.charAt(0).toUpperCase() + especieInput.slice(1).toLowerCase();
+  return permitidos.includes(formatado) ? formatado : "Outro";
+}
 
 async function animail(req, res) {
   try {
-    console.log("Entrou na API animal", req.method);
     if (req.method === "GET") {
-      const data = await getLastUpdatedAnimals();
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 15;
+      const statusFilter = req.query.status || null;
+      const offset = (page - 1) * limit;
+
+      const data = await getAnimals(limit, offset, statusFilter);
+      const total = await getTotalCount(statusFilter);
+
       res.status(200).json({
         success: true,
         data: data,
+        pagination: { page, limit, total },
       });
     } else if (req.method === "PUT") {
-      console.log("Entrou no PUT da API animal");
       const data = await UpdateAnimal(req.body);
       return res.status(200).json({ success: true, data: data });
     } else if (req.method === "POST") {
       const data = await CreateAnimal(req.body);
       return res.status(200).json({ success: true, data: data });
     } else if (req.method === "DELETE") {
-      console.log("Entrou no DELETE da API animal");
       const { id } = req.query;
-      if (!id) {
-        return res.status(400).json({ error: "ID do animal é obrigatório" });
-      }
+      if (!id) return res.status(400).json({ error: "ID obrigatório" });
       const data = await DeleteAnimal(id);
       return res.status(200).json({ success: true, data: data });
     } else {
       return res.status(405).json({ error: "Método não permitido" });
     }
   } catch (err) {
-    return res.status(500).json({ error: "Erro inesperado: " + err.message });
+    return res.status(500).json({ error: "Erro: " + err.message });
   }
 }
 
-async function UpdateAnimal(animal) {
-  try {
-    // 1️⃣ Buscar o ID da espécie pelo nome
-    console.log("Atualizando animal:", animal);
-    console.log("Buscando ID da espécie para:", animal.especie);
-    const especieResult = await database.query({
-      text: `SELECT id FROM especie WHERE LOWER(nome_especie) = LOWER($1)`,
-      values: [animal.especie],
-    });
+// GET: Agora busca dados do animal E do resgate (JOIN)
+async function getAnimals(limit, offset, status) {
+  let queryText = `
+    SELECT 
+      a.id, a.nome, a.status, a.especie, a.sexo, a.imagem_url, a.criado_em, a.atualizado_em,
+      r.local, r.agente, r.observacao, r.solicitante, r.telefone_solicitante, r.animal_de_rua, r.destino
+    FROM animal a
+    LEFT JOIN resgate r ON a.id = r.animal_id
+  `;
+  const queryValues = [limit, offset];
 
-    if (especieResult.rows.length === 0) {
-      throw new Error(`Espécie "${animal.especie}" não encontrada`);
-    }
-
-    const especie_id = especieResult.rows[0].id;
-    console.log("ID da espécie encontrada:", especie_id);
-    console.log("Buscando ID da raça para:", animal.raca);
-    // 2️⃣ Buscar o ID da raça pelo nome
-    const racaResult = await database.query({
-      text: `SELECT id FROM raca WHERE LOWER(nome_raca) = LOWER($1) AND especie_id = $2`,
-      values: [animal.raca, especie_id], // garante que a raça pertence à espécie correta
-    });
-    let raca_id = null;
-    if (racaResult.rows.length === 0) {
-      console.log(
-        `Raça "${animal.raca}" não encontrada para a espécie "${animal.especie}"`,
-      );
-    } else {
-      raca_id = racaResult.rows[0].id;
-    }
-
-    console.log("ID da raça encontrada:", raca_id);
-    console.log("Atualizando animal com ID:", animal.id);
-    // 3️⃣ Atualizar o animal
-    const queryObject = {
-      text: `
-        UPDATE animal
-        SET 
-          nome = $1,
-          status = $2,
-          idade = $3,
-          especie_id = $4,
-          raca_id = $5,
-          sexo = $6,
-          atualizado_em = CURRENT_TIMESTAMP
-        WHERE id = $7
-        RETURNING *;
-      `,
-      values: [
-        animal.nome,
-        animal.status,
-        animal.idade,
-        especie_id,
-        raca_id,
-        animal.sexo,
-        animal.id,
-      ],
-    };
-
-    const result = await database.query(queryObject);
-    console.log("Animal atualizado com sucesso:", result.rows[0]);
-    return result.rows[0];
-  } catch (err) {
-    console.error("Error updating animal:", err);
-    throw new Error("Failed to update animal");
+  if (status && status !== "null" && status !== "undefined") {
+    queryText += ` WHERE LOWER(a.status) = LOWER($3) `;
+    queryValues.push(status);
   }
+
+  queryText += ` ORDER BY a.atualizado_em DESC LIMIT $1 OFFSET $2;`;
+
+  const result = await database.query({
+    text: queryText,
+    values: queryValues,
+  });
+  return result.rows;
 }
-async function getLastUpdatedAnimals() {
-  try {
-    const queryObject = {
-      text: `
-        SELECT 
-    a.id,
-    a.nome,
-    a.idade,
-    a.status,
-    a.sexo,
-    a.criado_em,
-    a.atualizado_em,
-    a.imagem_url,
-    e.nome_especie AS especie,
-    r.nome_raca AS raca
-FROM animal a
-LEFT JOIN especie e ON a.especie_id = e.id
-LEFT JOIN raca r ON a.raca_id = r.id
-ORDER BY a.atualizado_em DESC
-LIMIT 15;
-      `,
-    };
 
-    const result = await database.query(queryObject);
-    return result.rows;
-  } catch (err) {
-    console.error("Error fetching last updated animals:", err);
-    throw new Error("Failed to fetch last updated animals");
+async function getTotalCount(status) {
+  let queryText = "SELECT count(*) FROM animal";
+  const queryValues = [];
+
+  if (status && status !== "null" && status !== "undefined") {
+    queryText += " WHERE LOWER(status) = LOWER($1)";
+    queryValues.push(status);
   }
+
+  const result = await database.query({
+    text: queryText,
+    values: queryValues,
+  });
+  return parseInt(result.rows[0].count);
 }
 
 async function CreateAnimal(animal) {
-  let log = "Iniciando criação de animal";
-  try {
-    const animal_obj = JSON.parse(animal);
-    log +=
-      "\nDados recebidos: " +
-      animal_obj.idade +
-      "sem transformar" +
-      animal.idade;
-    const queryObject = {
-      text: `
-        INSERT INTO animal (nome, idade, status, sexo, especie_id, raca_id, imagem_url)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING *;
-      `,
-      values: [
-        animal_obj.nome || null,
-        animal_obj.idade,
-        animal_obj.status || null,
-        animal_obj.sexo,
-        animal_obj.especie_id,
-        animal_obj.raca_id || null,
-        animal_obj.imagem_url || null,
-      ],
-    };
-    const result = await database.query(queryObject);
-    log += "\nAnimal criado com sucesso: " + JSON.stringify(result.rows[0]);
-    console.log(log);
-    return result.rows?.[0] ?? null;
-  } catch (err) {
-    console.error(log + "Error creating animal:", err);
-    throw new Error(log + "Failed to create animal", err);
+  const animal_obj = typeof animal === "string" ? JSON.parse(animal) : animal;
+  const especieFinal = validarEspecie(animal_obj.especie);
+
+  const queryObject = {
+    text: `
+      INSERT INTO animal (status, sexo, especie, imagem_url)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *;
+    `,
+    values: [
+      animal_obj.status || "Resgatado",
+      animal_obj.sexo,
+      especieFinal,
+      animal_obj.imagem_url || null,
+    ],
+  };
+  const result = await database.query(queryObject);
+  return result.rows?.[0] ?? null;
+}
+
+// PUT: Atualiza Animal e Resgate
+async function UpdateAnimal(animal) {
+  // 1. Imagem
+  const currentDataResult = await database.query({
+    text: "SELECT imagem_url FROM animal WHERE id = $1",
+    values: [animal.id],
+  });
+  if (currentDataResult.rows.length > 0) {
+    const oldUrl = currentDataResult.rows[0].imagem_url;
+    if (animal.imagem_url && oldUrl && oldUrl !== animal.imagem_url) {
+      await deleteImageFromStorage(oldUrl);
+    }
   }
+
+  const especieFinal = validarEspecie(animal.especie);
+
+  // 2. Atualiza Tabela ANIMAL
+  await database.query({
+    text: `
+      UPDATE animal
+      SET 
+        nome = $1, status = $2, especie = $3, sexo = $4, imagem_url = $5, atualizado_em = CURRENT_TIMESTAMP
+      WHERE id = $6;
+    `,
+    values: [
+      animal.nome,
+      animal.status,
+      especieFinal,
+      animal.sexo,
+      animal.imagem_url,
+      animal.id,
+    ],
+  });
+
+  // 3. Atualiza Tabela RESGATE
+  // Nota: animal_de_rua precisa ser booleano
+  const isAnimalDeRua =
+    animal.animal_de_rua === true ||
+    animal.animal_de_rua === "true" ||
+    animal.animal_de_rua === "sim";
+
+  await database.query({
+    text: `
+      UPDATE resgate
+      SET 
+        local = $1, agente = $2, observacao = $3, 
+        solicitante = $4, telefone_solicitante = $5, 
+        animal_de_rua = $6, destino = $7
+      WHERE animal_id = $8;
+    `,
+    values: [
+      animal.local,
+      animal.agente,
+      animal.observacao,
+      animal.solicitante,
+      animal.telefone_solicitante,
+      isAnimalDeRua,
+      animal.destino,
+      animal.id,
+    ],
+  });
+
+  // Retorna o objeto combinado atualizado para o frontend
+  return animal;
 }
 
 async function DeleteAnimal(animalId) {
-  try {
-    const queryObject = {
-      text: `
-        DELETE FROM animal
-        WHERE id = $1
-        RETURNING *;
-      `,
-      values: [animalId],
-    };
+  const currentDataResult = await database.query({
+    text: "SELECT imagem_url FROM animal WHERE id = $1",
+    values: [animalId],
+  });
 
-    const result = await database.query(queryObject);
-    if (result.rows.length === 0) {
-      throw new Error(`Animal com ID ${animalId} não encontrado`);
-    }
-
-    return result.rows[0];
-  } catch (err) {
-    console.error("Error deleting animal:", err);
-    throw new Error("Failed to delete animal");
+  if (currentDataResult.rows.length > 0) {
+    const oldUrl = currentDataResult.rows[0].imagem_url;
+    await deleteImageFromStorage(oldUrl);
   }
+
+  const result = await database.query({
+    text: "DELETE FROM animal WHERE id = $1 RETURNING *;",
+    values: [animalId],
+  });
+
+  if (result.rows.length === 0) throw new Error("Animal não encontrado");
+  return result.rows[0];
 }
+
 export default animail;

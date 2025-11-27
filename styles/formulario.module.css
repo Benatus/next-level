@@ -1,45 +1,9 @@
 .container {
+  height: 100vh;
   width: 100%;
-  font-family: Arial, sans-serif;
-  background-color: #f5f5f5; /* fundo neutro */
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
-.menu_bar {
-  background-size: cover;
-  flex-direction: row;
-  background-color: #006837; /* verde */
-  color: white;
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-.display {
-  flex: 1;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-
-.icon_image {
-  width: 50px;
-  height: 50px;
-  background-image: url(../infra/imagens/home/cemsa_apucarana.jpg);
-  background-size: cover;
-  background-position: center;
-  background-color: antiquewhite;
-  border-radius: 50px;
-  border: solid 2px;
-  border-color: bisque;
-  margin: 10px;
-}
-
-.cemsa {
-  color: white;
-  font-size: 1.5rem;
-  font-weight: bold;
+  background-color: #f0f2f5;
 }
 
 .form_area {
@@ -47,133 +11,221 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 2rem;
+  padding: 20px;
+  overflow: hidden;
 }
 
+/* Caixa principal do formulário */
 .form_box {
-  background-color: #ffffff;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background-color: #fff;
   width: 100%;
-  max-width: 600px;
-
+  max-width: 900px;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  max-height: 85vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
 }
 
+/* Layout dividido para a aba de usuários */
+.split_layout {
+  display: flex;
+  gap: 30px;
+  width: 100%;
+}
+
+.split_left {
+  flex: 1;
+}
+
+.split_right {
+  flex: 1;
+  border-left: 1px solid #eee;
+  padding-left: 30px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Lista de Usuários */
+.user_list_container {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 400px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.user_item {
+  background-color: white;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  border: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user_info strong {
+  display: block;
+  color: #333;
+}
+
+.user_info span {
+  font-size: 0.8rem;
+  color: #666;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.role_badge_admin {
+  color: #d32f2f;
+}
+.role_badge_comum {
+  color: #006837;
+}
+
+/* Abas */
+.tabs_container {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 25px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+}
+
+.tab_button {
+  padding: 10px 25px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  background-color: #e0e0e0;
+  color: #666;
+}
+
+.tab_button.active {
+  background-color: #006837;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 104, 55, 0.3);
+}
+
+.tab_button:hover:not(.active) {
+  background-color: #d0d0d0;
+}
+
+/* Formulário Geral */
 .formulario {
   display: flex;
   flex-direction: column;
+  gap: 20px; /* Aumentei o espaçamento entre campos para garantir respiro */
 }
 
 .section_title {
+  color: #006837;
   font-size: 1.2rem;
-  font-weight: bold;
-  color: #1e90ff; /* azul */
-  margin: 1.5rem 0 0.5rem;
+  margin-top: 0;
+  margin-bottom: 10px;
+  border-bottom: 2px solid #e8f5e9;
+  padding-bottom: 8px;
+}
+
+.subsection_title {
+  font-size: 1rem;
+  color: #555;
+  margin-top: 15px;
+  margin-bottom: 5px;
+  font-weight: 600;
 }
 
 .input_legend {
   font-size: 0.9rem;
-  color: #333;
-  margin: 0.8rem 0 0.3rem;
+  font-weight: 600;
+  color: #444;
+  /* CORREÇÃO AQUI: Margem positiva para separar o título do input */
+  margin-bottom: 5px;
+  margin-left: 2px;
+  display: block; /* Garante que o label ocupe a linha inteira */
 }
 
-.input_text {
-  padding: 0.6rem;
+.input_text,
+.select_field,
+.textarea_field {
+  width: 100%;
+  padding: 12px;
   border: 1px solid #ccc;
   border-radius: 8px;
   font-size: 1rem;
+  background-color: #f9f9f9;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
+  box-sizing: border-box;
+}
+
+.input_text:focus,
+.select_field:focus,
+.textarea_field:focus {
+  border-color: #006837;
+  background-color: #fff;
   outline: none;
-  transition: border 0.3s ease;
-}
-
-.input_text:focus {
-  border-color: #1e90ff;
-  box-shadow: 0 0 4px rgba(30, 144, 255, 0.3);
-}
-
-/* campos especiais */
-.select_field {
-  padding: 0.6rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 1rem;
-  outline: none;
-  transition: border 0.3s ease;
-}
-
-.select_field:focus {
-  border-color: #1e90ff;
-  box-shadow: 0 0 4px rgba(30, 144, 255, 0.3);
+  box-shadow: 0 0 0 3px rgba(0, 104, 55, 0.1);
 }
 
 .textarea_field {
-  padding: 0.6rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 1rem;
-  outline: none;
-  transition: border 0.3s ease;
   resize: vertical;
+  min-height: 80px;
 }
 
-.textarea_field:focus {
-  border-color: #1e90ff;
-  box-shadow: 0 0 4px rgba(30, 144, 255, 0.3);
+.row_2_col {
+  display: flex;
+  gap: 20px; /* Mais espaço entre colunas */
+  width: 100%;
+}
+
+.row_2_col > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  /* Removemos o gap interno aqui para deixar o label controlar a distância */
 }
 
 .input_submit {
-  background-color: #006837; /* verde */
+  margin-top: 20px;
+  padding: 15px;
+  background: linear-gradient(135deg, #006837 0%, #0bb666 100%);
   color: white;
-  font-size: 1rem;
-  font-weight: bold;
-  padding: 0.8rem;
-  margin-top: 1.5rem;
   border: none;
   border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .input_submit:hover {
-  background-color: #004d26; /* verde mais escuro */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 104, 55, 0.3);
 }
+
+.input_submit:active {
+  transform: translateY(0);
+}
+
 .successMessage {
-  background-color: #e6ffed; /* verde claro para sucesso */
-  border: 1px solid #00b33c; /* verde mais forte */
-  color: #006837; /* verde do tema */
-  padding: 1.2rem 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #e8f5e9;
+  border: 1px solid #c8e6c9;
   text-align: center;
-  margin-top: 1rem;
-  font-weight: bold;
-  position: relative;
-}
-
-.successMessageButton {
-  margin-top: 1rem;
-  background-color: #006837;
-  color: white;
-  border: none;
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background 0.3s ease;
-}
-
-.errorMessageButton {
-  margin-top: 1rem;
-  background-color: #aa0a0a;
-  color: white;
-  border: none;
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background 0.3s ease;
+  color: #2e7d32;
 }
