@@ -3,30 +3,16 @@
  */
 exports.shorthands = undefined;
 
-/**
- * @param pgm {import('node-pg-migrate').MigrationBuilder}
- * @param run {() => void | undefined}
- * @returns {Promise<void> | void}
- */
 exports.up = (pgm) => {
   pgm.createTable("animal", {
     id: "id",
-    nome: { type: "varchar(100)" },
-    // idade: REMOVIDO
+    // Nome começa vazio por padrão, conforme regra de negócio
+    nome: { type: "varchar(100)", default: "", notNull: false },
     status: { type: "varchar(50)" },
     sexo: { type: "varchar(10)", notNull: true },
-    especie_id: {
-      type: "integer",
-      notNull: true,
-      references: "especie",
-      onDelete: "CASCADE",
-    },
-    raca_id: {
-      type: "integer",
-      notNull: false,
-      references: "raca",
-      onDelete: "CASCADE",
-    },
+    // Espécie agora é texto direto (Cachorro, Gato, Outro)
+    especie: { type: "varchar(50)", notNull: true },
+
     criado_em: {
       type: "timestamp",
       notNull: true,
@@ -43,24 +29,24 @@ exports.up = (pgm) => {
     },
   });
 
-  // DADOS INICIAIS SEM IDADE E COM STATUS CORRIGIDO
+  // DADOS INICIAIS (Sem raça, sem idade, espécie como texto)
   pgm.sql(`
-    INSERT INTO animal (nome, status, sexo, especie_id, raca_id) VALUES
-    ('Mia', 'Canil', 'Femea', (SELECT id FROM especie WHERE nome_especie='Gato'), (SELECT id FROM raca WHERE nome_raca='Siamês')),
-    ('Luna', 'Adotado', 'Femea', (SELECT id FROM especie WHERE nome_especie='Gato'), (SELECT id FROM raca WHERE nome_raca='Persa')),
-    ('Leo', 'Canil', 'Macho', (SELECT id FROM especie WHERE nome_especie='Gato'), (SELECT id FROM raca WHERE nome_raca='Maine Coon')),
-    ('Boris', 'Canil', 'Macho', (SELECT id FROM especie WHERE nome_especie='Gato'), (SELECT id FROM raca WHERE nome_raca='Bengal')),
-    ('Simba', 'Adotado', 'Macho', (SELECT id FROM especie WHERE nome_especie='Gato'), (SELECT id FROM raca WHERE nome_raca='Siamês')),
-    ('Rex', 'Canil', 'Macho', (SELECT id FROM especie WHERE nome_especie='Cachorro'), (SELECT id FROM raca WHERE nome_raca='Labrador')),
-    ('Bella', 'Canil', 'Femea', (SELECT id FROM especie WHERE nome_especie='Cachorro'), (SELECT id FROM raca WHERE nome_raca='Pastor Alemão')),
-    ('Max', 'Adotado', 'Macho', (SELECT id FROM especie WHERE nome_especie='Cachorro'), (SELECT id FROM raca WHERE nome_raca='Bulldog')),
-    ('Lola', 'Canil', 'Femea', (SELECT id FROM especie WHERE nome_especie='Cachorro'), (SELECT id FROM raca WHERE nome_raca='Poodle')),
-    ('Toby', 'Canil', 'Macho', (SELECT id FROM especie WHERE nome_especie='Cachorro'), (SELECT id FROM raca WHERE nome_raca='Labrador')),
-    ('Misty', 'Adotado', 'Femea', (SELECT id FROM especie WHERE nome_especie='Gato'), (SELECT id FROM raca WHERE nome_raca='Bengal')),
-    ('Oscar', 'Canil', 'Macho', (SELECT id FROM especie WHERE nome_especie='Gato'), (SELECT id FROM raca WHERE nome_raca='Persa')),
-    ('Daisy', 'Canil', 'Femea', (SELECT id FROM especie WHERE nome_especie='Cachorro'), (SELECT id FROM raca WHERE nome_raca='Poodle')),
-    ('Charlie', 'Adotado', 'Macho', (SELECT id FROM especie WHERE nome_especie='Cachorro'), (SELECT id FROM raca WHERE nome_raca='Pastor Alemão')),
-    ('Nina', 'Canil', 'Femea', (SELECT id FROM especie WHERE nome_especie='Cachorro'), (SELECT id FROM raca WHERE nome_raca='Bulldog'));
+    INSERT INTO animal (nome, status, sexo, especie) VALUES
+    ('Mia', 'Canil', 'Femea', 'Gato'),
+    ('Luna', 'Adotado', 'Femea', 'Gato'),
+    ('Leo', 'Canil', 'Macho', 'Gato'),
+    ('Boris', 'Canil', 'Macho', 'Gato'),
+    ('Simba', 'Adotado', 'Macho', 'Gato'),
+    ('Rex', 'Canil', 'Macho', 'Cachorro'),
+    ('Bella', 'Canil', 'Femea', 'Cachorro'),
+    ('Max', 'Adotado', 'Macho', 'Cachorro'),
+    ('Lola', 'Canil', 'Femea', 'Cachorro'),
+    ('Toby', 'Canil', 'Macho', 'Cachorro'),
+    ('Misty', 'Adotado', 'Femea', 'Gato'),
+    ('Oscar', 'Canil', 'Macho', 'Gato'),
+    ('Daisy', 'Canil', 'Femea', 'Cachorro'),
+    ('Charlie', 'Adotado', 'Macho', 'Cachorro'),
+    ('Nina', 'Canil', 'Femea', 'Cachorro');
   `);
 };
 
