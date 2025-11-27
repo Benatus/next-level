@@ -402,10 +402,12 @@ function PanelData({ form_data, updateAnimal, deleteAnimal, isAdmin }) {
 
           <div className={styles.form_column}>
             <div className={styles.form_scroll_container}>
+              {/* PASSA isAdmin PARA O FORMULÁRIO */}
               <VerticalForm
                 localData={localData}
                 setLocalData={setLocalData}
                 editable={editable}
+                isAdmin={isAdmin}
               />
             </div>
             {isAdmin && editable && (
@@ -452,8 +454,7 @@ function PanelData({ form_data, updateAnimal, deleteAnimal, isAdmin }) {
 }
 
 // --- FORMULÁRIO COM SEÇÕES E MÁSCARA ---
-function VerticalForm({ localData, setLocalData, editable }) {
-  // Função padrão para inputs genéricos
+function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
   const handleChange = (e) =>
     setLocalData((prev) => ({ ...prev, [e.target.id]: e.target.value }));
 
@@ -462,7 +463,7 @@ function VerticalForm({ localData, setLocalData, editable }) {
     let value = e.target.value.replace(/\D/g, ""); // Remove tudo que não é dígito
     if (value.length > 11) value = value.slice(0, 11); // Limita a 11 números
 
-    // Aplica a máscara (XX)XXXXX-XXXX
+    // Aplica a máscara
     if (value.length > 7) {
       value = `(${value.slice(0, 2)})${value.slice(2, 7)}-${value.slice(7)}`;
     } else if (value.length > 2) {
@@ -485,7 +486,7 @@ function VerticalForm({ localData, setLocalData, editable }) {
         onChange={customChange || handleChange}
         disabled={!editable}
         className={styles.input_text}
-        maxLength={id === "telefone_solicitante" ? 14 : undefined} // Limite visual
+        maxLength={id === "telefone_solicitante" ? 14 : undefined}
       />
     </div>
   );
@@ -602,12 +603,13 @@ function VerticalForm({ localData, setLocalData, editable }) {
 
       {renderInput("solicitante", "Solicitante")}
 
-      {/* APLICAÇÃO DA MÁSCARA AQUI */}
-      {renderInput(
-        "telefone_solicitante",
-        "Telefone do Solicitante",
-        handlePhoneChange,
-      )}
+      {/* SÓ RENDERIZA O TELEFONE SE FOR ADMIN */}
+      {isAdmin &&
+        renderInput(
+          "telefone_solicitante",
+          "Telefone do Solicitante",
+          handlePhoneChange,
+        )}
 
       <div className={styles.form_vertical_div}>
         <label htmlFor="animal_de_rua" className={styles.label_form}>
