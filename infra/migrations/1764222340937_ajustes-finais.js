@@ -1,8 +1,9 @@
-/* infra/migrations/1756100000001_ajustes_finais.js */
+/* infra/migrations/1764222340937_ajustes-finais.js */
 
 exports.up = (pgm) => {
   // 1. Ajustes na tabela ANIMAL
-  pgm.dropColumn("animal", "idade");
+
+  // REMOVIDO: pgm.dropColumn("animal", "idade"); <--- APAGUE ESTA LINHA
 
   pgm.createSequence("animal_nome_seq", { start: 1000 });
 
@@ -24,8 +25,7 @@ exports.up = (pgm) => {
     nivel_acesso: { type: "varchar(20)", default: "comum", notNull: true },
   });
 
-  // --- CORREÇÃO AQUI ---
-  // Força o utilizador 'admin' a ter o nível de acesso 'admin'
+  // Atualiza Admin
   pgm.sql("UPDATE usuario SET nivel_acesso = 'admin' WHERE nome = 'admin';");
 };
 
@@ -39,5 +39,5 @@ exports.down = (pgm) => {
   ]);
   pgm.alterColumn("animal", "nome", { default: null, notNull: false });
   pgm.dropSequence("animal_nome_seq");
-  pgm.addColumn("animal", { idade: { type: "varchar(20)" } });
+  // pgm.addColumn("animal", { idade: { type: "varchar(20)" } }); // Mantenha removido do down também
 };
