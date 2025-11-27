@@ -1,4 +1,12 @@
-function Obito() {
-  return <div>Óbito Page</div>;
+import GerenciadorAnimais from "infra/components/GerenciadorAnimais";
+import { getSession } from "next-auth/react";
+
+export default function Obito() {
+  return <GerenciadorAnimais filtroStatus="Obito" titulo="Óbito" />;
 }
-export default Obito;
+
+export async function getServerSideProps(ctx) {
+  const session = await getSession(ctx);
+  if (!session) return { redirect: { destination: "/", permanent: false } };
+  return { props: { user: session.user } };
+}

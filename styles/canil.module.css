@@ -337,3 +337,62 @@
   overflow-y: auto; /* scroll vertical apenas aqui */
   min-height: 0; /* importante para flexbox */
 }
+
+/* ... seu código existente ... */
+
+/* --- NOVOS ESTILOS PARA A BARRA DE NAVEGAÇÃO --- */
+
+/* Container dos links de navegação (Resgate, Canil, etc) */
+.menu_nav {
+  display: flex;
+  flex: 1; /* Ocupa o espaço central */
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap; /* Quebra linha se a tela for muito pequena */
+}
+
+/* O texto dentro dos botões de navegação */
+.nav_text {
+  color: #e8f5e9; /* Branco levemente esverdeado */
+  font-weight: bold;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+  padding: 0 5px;
+}
+
+/* Container do Título da Página (Direita) */
+.page_title_container {
+  border-left: 2px solid rgba(255, 255, 255, 0.3);
+  padding-left: 15px;
+  min-width: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.page_title {
+  font-size: 1.4rem;
+  margin: 0;
+  color: white;
+  text-align: right;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Ajuste responsivo para telas pequenas */
+@media screen and (max-width: 768px) {
+  .menu_nav {
+    display: none; /* Oculta menu superior no mobile para não quebrar layout */
+    /* Idealmente aqui você colocaria um menu hambúrguer */
+  }
+  .page_title_container {
+    border: none;
+    min-width: auto;
+  }
+  .page_title {
+    font-size: 1rem;
+  }
+}
