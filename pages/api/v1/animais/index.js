@@ -16,6 +16,14 @@ async function animail(req, res) {
     } else if (req.method === "POST") {
       const data = await CreateAnimal(req.body);
       return res.status(200).json({ success: true, data: data });
+    } else if (req.method === "DELETE") {
+      console.log("Entrou no DELETE da API animal");
+      const { id } = req.query;
+      if (!id) {
+        return res.status(400).json({ error: "ID do animal é obrigatório" });
+      }
+      const data = await DeleteAnimal(id);
+      return res.status(200).json({ success: true, data: data });
     } else {
       return res.status(405).json({ error: "Método não permitido" });
     }
@@ -154,6 +162,29 @@ async function CreateAnimal(animal) {
   } catch (err) {
     console.error(log + "Error creating animal:", err);
     throw new Error(log + "Failed to create animal", err);
+  }
+}
+
+async function DeleteAnimal(animalId) {
+  try {
+    const queryObject = {
+      text: `
+        DELETE FROM animal
+        WHERE id = $1
+        RETURNING *;
+      `,
+      values: [animalId],
+    };
+
+    const result = await database.query(queryObject);
+    if (result.rows.length === 0) {
+      throw new Error(`Animal com ID ${animalId} não encontrado`);
+    }
+
+    return result.rows[0];
+  } catch (err) {
+    console.error("Error deleting animal:", err);
+    throw new Error("Failed to delete animal");
   }
 }
 export default animail;

@@ -44,7 +44,7 @@ function Home() {
                 name="usuario"
                 className={styles.input_text}
                 type="text"
-                placeholder="Digite seu usuário aqui"
+                placeholder="Digite seu email aqui"
               ></input>
               <label className={styles.input_legend} htmlFor="senha">
                 Senha
