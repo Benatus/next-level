@@ -51,14 +51,6 @@ export default function GerenciadorAnimais({ filtroStatus, titulo }) {
     }
   };
 
-  useEffect(() => {
-    const channel = new BroadcastChannel("cemsa_updates");
-    channel.onmessage = (event) => {
-      if (event.data === "refresh") handleRefresh();
-    };
-    return () => channel.close();
-  }, []);
-
   const getCacheKey = useCallback(
     (pageNum) => {
       const filterKey = filtroStatus ? filtroStatus.toLowerCase() : "geral";
@@ -120,16 +112,27 @@ export default function GerenciadorAnimais({ filtroStatus, titulo }) {
     [filtroStatus, getCacheKey, saveToCache],
   );
 
+  // CORREÇÃO 1: Envolver handleRefresh em useCallback
+  const handleRefresh = useCallback(() => {
+    clearCache();
+    fetchAnimals(page, true);
+  }, [clearCache, fetchAnimals, page]);
+
+  // CORREÇÃO 2: Adicionar handleRefresh nas dependências
+  useEffect(() => {
+    const channel = new BroadcastChannel("cemsa_updates");
+    channel.onmessage = (event) => {
+      if (event.data === "refresh") handleRefresh();
+    };
+    return () => channel.close();
+  }, [handleRefresh]);
+
   useEffect(() => {
     fetchAnimals(page, false);
   }, [fetchAnimals, page]);
 
   const handleNextPage = () => setPage((p) => p + 1);
   const handlePrevPage = () => setPage((p) => Math.max(1, p - 1));
-  const handleRefresh = () => {
-    clearCache();
-    fetchAnimals(page, true);
-  };
 
   const notifyUpdate = () => {
     const channel = new BroadcastChannel("cemsa_updates");
@@ -310,21 +313,18 @@ function PanelData({
     setShowModal(false);
   }, [form_data]);
 
+  // CORREÇÃO 3: Removido try/catch inútil
   async function upload(imagem) {
-    try {
-      const formData = new FormData();
-      formData.append("imagem", imagem);
-      const response = await fetch("/api/v1/upload", {
-        method: "POST",
-        duplex: "half",
-        body: formData,
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error);
-      return data.url;
-    } catch (error) {
-      throw error;
-    }
+    const formData = new FormData();
+    formData.append("imagem", imagem);
+    const response = await fetch("/api/v1/upload", {
+      method: "POST",
+      duplex: "half",
+      body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+    return data.url;
   }
 
   const handleFileChange = (e) => {
@@ -401,7 +401,6 @@ function PanelData({
         >
           <h2 style={{ margin: 0 }}>{displayTitle}</h2>
 
-          {/* Botão de Download para Admin */}
           {hasSelectedAnimal && isAdmin && (
             <button
               onClick={() => handleDownload(form_data)}
@@ -582,7 +581,19 @@ function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
     </div>
   );
 
-  // Verificação de status customizado
+  const renderReadOnlyInput = (label, value) => (
+    <div className={styles.form_vertical_div}>
+      <label className={styles.label_form}>{label}</label>
+      <input
+        type="text"
+        value={value}
+        disabled
+        className={styles.input_text}
+        style={{ backgroundColor: "#eee", color: "#666" }}
+      />
+    </div>
+  );
+
   const validStatuses = ["Canil", "Clinica", "Adotado", "Obito"];
   const currentStatus = localData.status || "";
   const showExtraOption =
@@ -600,6 +611,7 @@ function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
       >
         Dados do Animal
       </h3>
+
       <div className={styles.form_vertical_div}>
         <label className={styles.label_form}>Nome do Animal</label>
         <input
@@ -666,30 +678,15 @@ function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
           <option value="Obito">Obito</option>
         </select>
       </div>
-      <div className={styles.form_vertical_div}>
-        <label className={styles.label_form}>
-          Registro de Animal Criado em
-        </label>
-        <input
-          type="text"
-          value={formatDate(localData.criado_em)}
-          disabled
-          className={styles.input_text}
-          style={{ backgroundColor: "#eee", color: "#666" }}
-        />
-      </div>
-      <div className={styles.form_vertical_div}>
-        <label className={styles.label_form}>
-          Registro de Animal Atualizado em
-        </label>
-        <input
-          type="text"
-          value={formatDate(localData.atualizado_em)}
-          disabled
-          className={styles.input_text}
-          style={{ backgroundColor: "#eee", color: "#666" }}
-        />
-      </div>
+
+      {renderReadOnlyInput(
+        "Registro de Animal Criado em",
+        formatDate(localData.criado_em),
+      )}
+      {renderReadOnlyInput(
+        "Registro de Animal Atualizado em",
+        formatDate(localData.atualizado_em),
+      )}
 
       <h3
         style={{
@@ -733,6 +730,7 @@ function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
 
       {renderInput("local", "Local do Resgate")}
       {renderInput("agente", "Responsável (Agente)")}
+
       <div className={styles.form_vertical_div}>
         <label htmlFor="destino" className={styles.label_form}>
           Destino Inicial
@@ -748,13 +746,16 @@ function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
           <option value="Clinica">Clínica</option>
         </select>
       </div>
+
       {renderInput("solicitante", "Solicitante")}
+
       {isAdmin &&
         renderInput(
           "telefone_solicitante",
           "Telefone do Solicitante",
           handlePhoneChange,
         )}
+
       <div className={styles.form_vertical_div}>
         <label htmlFor="animal_de_rua" className={styles.label_form}>
           Animal de Rua?
@@ -775,6 +776,7 @@ function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
           <option value="nao">Não</option>
         </select>
       </div>
+
       <div className={styles.form_vertical_div}>
         <label htmlFor="observacao" className={styles.label_form}>
           Observação
@@ -790,30 +792,14 @@ function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
         />
       </div>
 
-      <div className={styles.form_vertical_div}>
-        <label className={styles.label_form}>
-          Registro de Resgate Criado em
-        </label>
-        <input
-          type="text"
-          value={formatDate(localData.resgate_criado_em)}
-          disabled
-          className={styles.input_text}
-          style={{ backgroundColor: "#eee", color: "#666" }}
-        />
-      </div>
-      <div className={styles.form_vertical_div}>
-        <label className={styles.label_form}>
-          Registro de Resgate Atualizado em
-        </label>
-        <input
-          type="text"
-          value={formatDate(localData.resgate_atualizado_em)}
-          disabled
-          className={styles.input_text}
-          style={{ backgroundColor: "#eee", color: "#666" }}
-        />
-      </div>
+      {renderReadOnlyInput(
+        "Registro de Resgate Criado em",
+        formatDate(localData.resgate_criado_em),
+      )}
+      {renderReadOnlyInput(
+        "Registro de Resgate Atualizado em",
+        formatDate(localData.resgate_atualizado_em),
+      )}
     </form>
   );
 }
