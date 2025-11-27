@@ -6,6 +6,8 @@ import { getSession, useSession } from "next-auth/react";
 export default function Cadastro() {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "admin";
+  const userName = session?.user?.name;
+
   const [activeTab, setActiveTab] = useState("resgate");
 
   return (
@@ -14,7 +16,6 @@ export default function Cadastro() {
 
       <section className={styles.form_area}>
         <div className={styles.form_box}>
-          {/* Abas de Navegação */}
           <div className={styles.tabs_container}>
             <button
               onClick={() => setActiveTab("resgate")}
@@ -23,7 +24,6 @@ export default function Cadastro() {
               Resgate
             </button>
 
-            {/* Só mostra a aba se for ADMIN */}
             {isAdmin && (
               <button
                 onClick={() => setActiveTab("usuario")}
@@ -34,9 +34,8 @@ export default function Cadastro() {
             )}
           </div>
 
-          {/* Renderização Condicional */}
           {activeTab === "resgate" ? (
-            <FormResgate />
+            <FormResgate userName={userName} />
           ) : (
             <FormUsuario isAdmin={isAdmin} />
           )}
@@ -46,21 +45,25 @@ export default function Cadastro() {
   );
 }
 
-// --- FORMULÁRIO DE RESGATE (MANTIDO IGUAL) ---
-function FormResgate() {
-  const [status, setStatus] = useState("");
+// --- FORMULÁRIO DE RESGATE ---
+function FormResgate({ userName }) {
+  const [status, setStatus] = useState({ type: "", msg: "" });
 
   const handlePhoneMask = (e) => {
     let value = e.target.value.replace(/\D/g, "");
     if (value.length > 11) value = value.slice(0, 11);
-    if (value.length > 2) value = `(${value.slice(0, 2)}) ` + value.slice(2);
-    if (value.length > 9) value = `${value.slice(0, 9)}-${value.slice(9)}`;
+    if (value.length > 7) {
+      value = `(${value.slice(0, 2)})${value.slice(2, 7)}-${value.slice(7)}`;
+    } else if (value.length > 2) {
+      value = `(${value.slice(0, 2)})` + value.slice(2);
+    }
     e.target.value = value;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatus("Enviando...");
+    setStatus({ type: "", msg: "Enviando..." });
+
     try {
       const form = e.target;
       let image_url = null;
@@ -77,8 +80,13 @@ function FormResgate() {
         image_url = upData.url;
       }
 
+      const destinoSelecionado = form.destino.value;
+      // Se for CEMSA -> Canil. Se for Clinica -> Clinica.
+      const statusFinal =
+        destinoSelecionado === "Clinica" ? "Clinica" : "Canil";
+
       const animalData = {
-        status: "Resgatado",
+        status: statusFinal,
         sexo: form.sexo.value,
         especie: form.especie.value,
         imagem_url: image_url,
@@ -100,7 +108,7 @@ function FormResgate() {
         solicitante: form.solicitante.value,
         telefone_solicitante: form.telefone.value,
         animal_de_rua: form.animal_de_rua.value === "sim",
-        destino: form.destino.value,
+        destino: destinoSelecionado,
         animal_id: animal.data.id,
       };
 
@@ -111,20 +119,23 @@ function FormResgate() {
       const result = await resForm.json();
 
       if (result.success) {
-        setStatus("Resgate registrado com sucesso!");
+        setStatus({
+          type: "success",
+          msg: `Cadastro realizado! ID: ${animal.data.nome}`,
+        });
         form.reset();
+        if (form.agente) form.agente.value = userName || "";
       } else {
         throw new Error("Erro ao salvar dados do resgate");
       }
     } catch (error) {
       console.error(error);
-      setStatus("Erro: " + error.message);
+      setStatus({ type: "error", msg: "Erro: " + error.message });
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className={styles.formulario}>
-      {/* SEÇÃO 1: DADOS DO RESGATE */}
       <h2 className={styles.section_title}>Dados do Resgate</h2>
 
       <div className={styles.row_2_col}>
@@ -162,17 +173,18 @@ function FormResgate() {
         type="text"
         placeholder="Nome do agente"
         required
+        defaultValue={userName}
       />
 
       <label className={styles.input_legend} htmlFor="destino">
         Destino do Animal
       </label>
       <select id="destino" className={styles.select_field} required>
-        <option value="CMSA">CMSA</option>
+        {/* CORREÇÃO AQUI: CEMSA */}
+        <option value="CEMSA">CEMSA</option>
         <option value="Clinica">Clínica</option>
       </select>
 
-      {/* SUBSEÇÃO: SOLICITANTE */}
       <h3 className={styles.subsection_title}>Informações do Solicitante</h3>
 
       <label className={styles.input_legend} htmlFor="solicitante">
@@ -214,7 +226,6 @@ function FormResgate() {
         rows="3"
       ></textarea>
 
-      {/* SEÇÃO 2: DADOS DO ANIMAL */}
       <h2 className={styles.section_title}>Dados do Animal</h2>
 
       <div className={styles.row_2_col}>
@@ -250,27 +261,37 @@ function FormResgate() {
         accept="image/*"
       />
 
-      <input
-        className={styles.input_submit}
-        type="submit"
-        value="Registrar Resgate"
-      />
+      <div className={styles.button_row}>
+        <button className={styles.input_submit} type="submit">
+          Registrar Resgate
+        </button>
+      </div>
 
-      {status && (
-        <div className={styles.successMessage}>
-          <p>{status}</p>
+      {status.msg && (
+        <div
+          className={
+            status.type === "error"
+              ? styles.errorMessage
+              : styles.successMessage
+          }
+        >
+          <p>{status.msg}</p>
         </div>
       )}
     </form>
   );
 }
 
-// --- FORMULÁRIO DE USUÁRIO COM LISTA LATERAL ---
+// --- FORMULÁRIO DE USUÁRIO ---
 function FormUsuario({ isAdmin }) {
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState({ type: "", msg: "" });
   const [users, setUsers] = useState([]);
+  const [editingUser, setEditingUser] = useState(null);
 
-  // Função para buscar usuários
+  const [nome, setNome] = useState("");
+  const [senha, setSenha] = useState("");
+  const [nivel, setNivel] = useState("comum");
+
   const fetchUsers = async () => {
     try {
       const res = await fetch("/api/v1/usuarios");
@@ -279,89 +300,180 @@ function FormUsuario({ isAdmin }) {
         setUsers(data);
       }
     } catch (err) {
-      console.error("Erro ao buscar usuários");
+      console.error("Erro busca usuários");
     }
   };
 
-  // Carrega usuários ao abrir a aba
   useEffect(() => {
     if (isAdmin) fetchUsers();
   }, [isAdmin]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const form = e.target;
-    const userData = {
-      nome: form.nome.value,
-      senha: form.senha.value,
-      nivel_acesso: form.nivel.value,
-    };
+  const handleEdit = (user) => {
+    setEditingUser(user);
+    setStatus({ type: "", msg: "" });
+    setNome(user.nome);
+    setNivel(user.nivel_acesso);
+    setSenha("");
+  };
 
+  const handleCancelEdit = () => {
+    setEditingUser(null);
+    setNome("");
+    setSenha("");
+    setNivel("comum");
+    setStatus({ type: "", msg: "" });
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("Tem certeza que deseja excluir este usuário?")) return;
     try {
-      const res = await fetch("/api/v1/usuarios", {
-        method: "POST",
-        body: JSON.stringify(userData),
+      const res = await fetch(`/api/v1/usuarios?id=${id}`, {
+        method: "DELETE",
       });
       const result = await res.json();
-      if (result.success) {
-        setStatus("Usuário criado com sucesso!");
-        form.reset();
-        fetchUsers(); // Atualiza a lista
+      if (res.ok) {
+        setStatus({ type: "success", msg: "Usuário excluído." });
+        fetchUsers();
       } else {
-        setStatus("Erro: " + result.error);
+        setStatus({ type: "error", msg: "Erro: " + result.error });
       }
     } catch (err) {
-      setStatus("Erro na requisição.");
+      setStatus({ type: "error", msg: "Erro ao excluir." });
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const userData = { nome, senha, nivel_acesso: nivel };
+
+    try {
+      let res;
+      if (editingUser) {
+        userData.id = editingUser.id;
+        res = await fetch("/api/v1/usuarios", {
+          method: "PUT",
+          body: JSON.stringify(userData),
+        });
+      } else {
+        res = await fetch("/api/v1/usuarios", {
+          method: "POST",
+          body: JSON.stringify(userData),
+        });
+      }
+
+      const result = await res.json();
+
+      if (result.success) {
+        setStatus({
+          type: "success",
+          msg: editingUser
+            ? "Usuário atualizado com sucesso!"
+            : "Usuário criado com sucesso!",
+        });
+
+        if (!editingUser) {
+          setNome("");
+          setSenha("");
+          setNivel("comum");
+        } else {
+          handleCancelEdit();
+        }
+        fetchUsers();
+      } else {
+        setStatus({ type: "error", msg: result.error || "Erro desconhecido" });
+      }
+    } catch (err) {
+      setStatus({ type: "error", msg: "Erro na requisição." });
     }
   };
 
   if (!isAdmin) return <p>Acesso Negado.</p>;
 
+  const isMainAdmin = editingUser && editingUser.nome === "admin";
+
   return (
     <div className={styles.split_layout}>
-      {/* Lado Esquerdo: Formulário */}
       <div className={styles.split_left}>
         <form onSubmit={handleSubmit} className={styles.formulario}>
-          <h2 className={styles.section_title}>Novo Usuário</h2>
+          <h2 className={styles.section_title}>
+            {editingUser ? `Editando: ${editingUser.nome}` : "Novo Usuário"}
+          </h2>
 
-          <label className={styles.input_legend} htmlFor="nome">
+          <label className={styles.input_legend} htmlFor="nome_usuario">
             Nome de Usuário
           </label>
-          <input id="nome" className={styles.input_text} type="text" required />
-
-          <label className={styles.input_legend} htmlFor="senha">
-            Senha
-          </label>
           <input
-            id="senha"
+            id="nome_usuario"
             className={styles.input_text}
-            type="password"
+            type="text"
             required
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            disabled={isMainAdmin}
+            style={
+              isMainAdmin ? { backgroundColor: "#e0e0e0", color: "#666" } : {}
+            }
           />
 
-          <label className={styles.input_legend} htmlFor="nivel">
+          <label className={styles.input_legend} htmlFor="senha_usuario">
+            {editingUser ? "Nova Senha (opcional)" : "Senha"}
+          </label>
+          <input
+            id="senha_usuario"
+            className={styles.input_text}
+            type="password"
+            required={!editingUser}
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+          />
+
+          <label className={styles.input_legend} htmlFor="nivel_acesso">
             Nível de Acesso
           </label>
-          <select id="nivel" className={styles.select_field}>
+          <select
+            id="nivel_acesso"
+            className={styles.select_field}
+            value={nivel}
+            onChange={(e) => setNivel(e.target.value)}
+            disabled={isMainAdmin}
+            style={
+              isMainAdmin ? { backgroundColor: "#e0e0e0", color: "#666" } : {}
+            }
+          >
             <option value="comum">Usuário Comum</option>
             <option value="admin">Administrador</option>
           </select>
 
-          <input
-            className={styles.input_submit}
-            type="submit"
-            value="Criar Usuário"
-          />
+          <div className={styles.button_row}>
+            <button className={styles.input_submit} type="submit">
+              {editingUser ? "Salvar Alterações" : "Criar Usuário"}
+            </button>
 
-          {status && (
-            <div className={styles.successMessage}>
-              <p>{status}</p>
+            {editingUser && (
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className={styles.cancel_button}
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
+
+          {status.msg && (
+            <div
+              className={
+                status.type === "error"
+                  ? styles.errorMessage
+                  : styles.successMessage
+              }
+            >
+              <p>{status.msg}</p>
             </div>
           )}
         </form>
       </div>
 
-      {/* Lado Direito: Lista de Usuários */}
       <div className={styles.split_right}>
         <h2 className={styles.section_title}>Usuários Cadastrados</h2>
         <div className={styles.user_list_container}>
@@ -378,6 +490,40 @@ function FormUsuario({ isAdmin }) {
                 >
                   {user.nivel_acesso}
                 </span>
+              </div>
+              <div style={{ display: "flex", gap: "5px" }}>
+                <button
+                  type="button"
+                  onClick={() => handleEdit(user)}
+                  style={{
+                    background: "#2cb3ff",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "5px 10px",
+                    cursor: "pointer",
+                  }}
+                  title="Editar"
+                >
+                  ✎
+                </button>
+                {user.nome !== "admin" && (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(user.id)}
+                    style={{
+                      background: "#ff4d4d",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      padding: "5px 10px",
+                      cursor: "pointer",
+                    }}
+                    title="Excluir"
+                  >
+                    🗑
+                  </button>
+                )}
               </div>
             </div>
           ))}

@@ -3,8 +3,9 @@ import Image from "next/image";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { MenuBar } from "infra/components/basic_components";
 import { useSession } from "next-auth/react";
+import { pdf } from "@react-pdf/renderer";
+import FichaAnimal from "./FichaAnimal";
 
-// Constantes
 const CACHE_PREFIX = "cemsa_cache_";
 const CACHE_DURATION = 5 * 60 * 1000;
 
@@ -31,6 +32,32 @@ export default function GerenciadorAnimais({ filtroStatus, titulo }) {
 
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+
+  const handleDownload = async (item) => {
+    if (!item || !item.id) return;
+    try {
+      const blob = await pdf(<FichaAnimal data={item} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Ficha_Animal_${item.nome}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Erro ao gerar PDF:", err);
+      alert("Erro ao gerar o PDF. Tente novamente.");
+    }
+  };
+
+  useEffect(() => {
+    const channel = new BroadcastChannel("cemsa_updates");
+    channel.onmessage = (event) => {
+      if (event.data === "refresh") handleRefresh();
+    };
+    return () => channel.close();
+  }, []);
 
   const getCacheKey = useCallback(
     (pageNum) => {
@@ -99,10 +126,15 @@ export default function GerenciadorAnimais({ filtroStatus, titulo }) {
 
   const handleNextPage = () => setPage((p) => p + 1);
   const handlePrevPage = () => setPage((p) => Math.max(1, p - 1));
-
   const handleRefresh = () => {
     clearCache();
     fetchAnimals(page, true);
+  };
+
+  const notifyUpdate = () => {
+    const channel = new BroadcastChannel("cemsa_updates");
+    channel.postMessage("refresh");
+    channel.close();
   };
 
   const updateAnimal = async (animal) => {
@@ -115,24 +147,22 @@ export default function GerenciadorAnimais({ filtroStatus, titulo }) {
       if (!response.ok) throw new Error("Erro ao atualizar");
       const json = await response.json();
       const updated = json.data || json;
-
+      clearCache();
       const newList = list_object.map((a) =>
         a.id === updated.id ? updated : a,
       );
-      setListObject(newList);
-      saveToCache(page, newList);
-
-      if (form_data && form_data.id === updated.id) setFormData(updated);
-
       if (
         filtroStatus &&
         updated.status?.toLowerCase() !== filtroStatus.toLowerCase()
       ) {
         const filteredList = list_object.filter((a) => a.id !== updated.id);
         setListObject(filteredList);
-        saveToCache(page, filteredList);
         setFormData({});
+      } else {
+        setListObject(newList);
+        if (form_data && form_data.id === updated.id) setFormData(updated);
       }
+      notifyUpdate();
       alert("Dados atualizados com sucesso!");
     } catch (err) {
       alert(err.message);
@@ -150,10 +180,11 @@ export default function GerenciadorAnimais({ filtroStatus, titulo }) {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Falha ao deletar");
+      clearCache();
       const newList = list_object.filter((a) => a.id !== id);
       setListObject(newList);
-      saveToCache(page, newList);
       setFormData({});
+      notifyUpdate();
       alert("Excluído.");
     } catch (err) {
       alert(err.message);
@@ -184,6 +215,7 @@ export default function GerenciadorAnimais({ filtroStatus, titulo }) {
             updateAnimal={updateAnimal}
             deleteAnimal={deleteAnimal}
             isAdmin={isAdmin}
+            handleDownload={handleDownload}
           />
 
           <div className={styles.right_column}>
@@ -194,7 +226,9 @@ export default function GerenciadorAnimais({ filtroStatus, titulo }) {
             >
               🔄 Atualizar Lista
             </button>
+
             <Lista list_object={list_object} set_form_data={setFormData} />
+
             <div className={styles.pagination_container}>
               <button
                 onClick={handlePrevPage}
@@ -230,15 +264,22 @@ function Lista({ list_object, set_form_data }) {
         <ul>
           {list_object.map((item) => (
             <li className={styles.list_item} key={String(item.id)}>
-              <button
+              <div
                 className={styles.button_list}
                 onClick={() => set_form_data(item)}
+                role="button"
+                tabIndex={0}
+                style={{ cursor: "pointer" }}
               >
-                <div className={styles.div_button_1}>{item.nome}</div>
+                <div className={styles.div_button_1}>
+                  {item.nome && item.nome.trim() !== ""
+                    ? `N° ${item.id} - ${item.nome}`
+                    : `N° ${item.id}`}
+                </div>
                 <div className={styles.div_button_2}>
                   <div className={styles.item_status}>{item.status}</div>
                 </div>
-              </button>
+              </div>
             </li>
           ))}
         </ul>
@@ -247,7 +288,13 @@ function Lista({ list_object, set_form_data }) {
   );
 }
 
-function PanelData({ form_data, updateAnimal, deleteAnimal, isAdmin }) {
+function PanelData({
+  form_data,
+  updateAnimal,
+  deleteAnimal,
+  isAdmin,
+  handleDownload,
+}) {
   const [editable, setEditable] = useState(false);
   const [localData, setLocalData] = useState(form_data || {});
   const [newImageFile, setNewImageFile] = useState(null);
@@ -264,16 +311,20 @@ function PanelData({ form_data, updateAnimal, deleteAnimal, isAdmin }) {
   }, [form_data]);
 
   async function upload(imagem) {
-    const formData = new FormData();
-    formData.append("imagem", imagem);
-    const response = await fetch("/api/v1/upload", {
-      method: "POST",
-      duplex: "half",
-      body: formData,
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error);
-    return data.url;
+    try {
+      const formData = new FormData();
+      formData.append("imagem", imagem);
+      const response = await fetch("/api/v1/upload", {
+        method: "POST",
+        duplex: "half",
+        body: formData,
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+      return data.url;
+    } catch (error) {
+      throw error;
+    }
   }
 
   const handleFileChange = (e) => {
@@ -304,14 +355,26 @@ function PanelData({ form_data, updateAnimal, deleteAnimal, isAdmin }) {
 
   const triggerFileInput = () => fileInputRef.current?.click();
 
-  if (!form_data || !form_data.id) {
+  const hasSelectedAnimal = form_data && form_data.id;
+
+  if (!hasSelectedAnimal) {
     return (
       <div className={styles.panel_data}>
         <div className={styles.panel_header}>
           <h2>Detalhes</h2>
         </div>
-        <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
-          <p>Selecione um animal na lista.</p>
+        <div
+          style={{
+            padding: "20px",
+            textAlign: "center",
+            color: "#666",
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <p>Selecione um animal na lista para visualizar.</p>
         </div>
       </div>
     );
@@ -319,11 +382,49 @@ function PanelData({ form_data, updateAnimal, deleteAnimal, isAdmin }) {
 
   const imageSrc = previewUrl || localData.imagem_url;
 
+  const displayTitle =
+    localData.nome && localData.nome.trim() !== ""
+      ? `N° ${localData.id} - ${localData.nome}`
+      : `N° ${localData.id}`;
+
   return (
     <>
       <div className={styles.panel_data}>
-        <div className={styles.panel_header}>
-          <h2>{localData.nome || "Detalhes"}</h2>
+        <div
+          className={styles.panel_header}
+          style={{
+            position: "relative",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <h2 style={{ margin: 0 }}>{displayTitle}</h2>
+
+          {/* Botão de Download para Admin */}
+          {hasSelectedAnimal && isAdmin && (
+            <button
+              onClick={() => handleDownload(form_data)}
+              style={{
+                position: "absolute",
+                right: 0,
+                top: "50%",
+                transform: "translateY(-50%)",
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                fontSize: "1.5rem",
+                color: "#006837",
+                padding: "5px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              title="Baixar Ficha PDF"
+            >
+              📥
+            </button>
+          )}
         </div>
 
         <div className={styles.panel_content}>
@@ -402,7 +503,6 @@ function PanelData({ form_data, updateAnimal, deleteAnimal, isAdmin }) {
 
           <div className={styles.form_column}>
             <div className={styles.form_scroll_container}>
-              {/* PASSA isAdmin PARA O FORMULÁRIO */}
               <VerticalForm
                 localData={localData}
                 setLocalData={setLocalData}
@@ -453,27 +553,18 @@ function PanelData({ form_data, updateAnimal, deleteAnimal, isAdmin }) {
   );
 }
 
-// --- FORMULÁRIO COM SEÇÕES E MÁSCARA ---
 function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
   const handleChange = (e) =>
     setLocalData((prev) => ({ ...prev, [e.target.id]: e.target.value }));
-
-  // Função com Máscara de Telefone (XX)XXXXX-XXXX
   const handlePhoneChange = (e) => {
-    let value = e.target.value.replace(/\D/g, ""); // Remove tudo que não é dígito
-    if (value.length > 11) value = value.slice(0, 11); // Limita a 11 números
-
-    // Aplica a máscara
-    if (value.length > 7) {
+    let value = e.target.value.replace(/\D/g, "");
+    if (value.length > 11) value = value.slice(0, 11);
+    if (value.length > 7)
       value = `(${value.slice(0, 2)})${value.slice(2, 7)}-${value.slice(7)}`;
-    } else if (value.length > 2) {
+    else if (value.length > 2)
       value = `(${value.slice(0, 2)})${value.slice(2)}`;
-    }
-
     setLocalData((prev) => ({ ...prev, [e.target.id]: value }));
   };
-
-  // Helper para renderizar input texto
   const renderInput = (id, label, customChange) => (
     <div key={id} className={styles.form_vertical_div}>
       <label htmlFor={id} className={styles.label_form}>
@@ -491,9 +582,14 @@ function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
     </div>
   );
 
+  // Verificação de status customizado
+  const validStatuses = ["Canil", "Clinica", "Adotado", "Obito"];
+  const currentStatus = localData.status || "";
+  const showExtraOption =
+    currentStatus && !validStatuses.includes(currentStatus);
+
   return (
     <form className={styles.form_vertical}>
-      {/* SEÇÃO 1: DADOS DO ANIMAL */}
       <h3
         style={{
           fontSize: "1rem",
@@ -504,15 +600,16 @@ function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
       >
         Dados do Animal
       </h3>
-
       <div className={styles.form_vertical_div}>
-        <label className={styles.label_form}>Criado em</label>
+        <label className={styles.label_form}>Nome do Animal</label>
         <input
+          id="nome"
           type="text"
-          value={formatDate(localData.criado_em)}
-          disabled
+          value={localData.nome || ""}
+          onChange={handleChange}
+          disabled={!editable}
           className={styles.input_text}
-          style={{ backgroundColor: "#eee" }}
+          placeholder="Nome (Deixe vazio se não tiver)"
         />
       </div>
 
@@ -532,7 +629,6 @@ function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
           <option value="Outro">Outro</option>
         </select>
       </div>
-
       <div className={styles.form_vertical_div}>
         <label htmlFor="sexo" className={styles.label_form}>
           Sexo
@@ -549,7 +645,6 @@ function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
           <option value="nao_identificado">Não identificado</option>
         </select>
       </div>
-
       <div className={styles.form_vertical_div}>
         <label htmlFor="status" className={styles.label_form}>
           Status
@@ -562,15 +657,40 @@ function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
           className={styles.select_form}
           style={{ fontWeight: "bold", color: "#2cb3ff" }}
         >
-          <option value="Resgatado">Resgatado</option>
+          {showExtraOption && (
+            <option value={currentStatus}>{currentStatus}</option>
+          )}
           <option value="Canil">Canil</option>
-          <option value="Em Tratamento">Em Tratamento</option>
-          <option value="Adocao">Adoção</option>
-          <option value="Obito">Óbito</option>
+          <option value="Clinica">Clinica</option>
+          <option value="Adotado">Adotado</option>
+          <option value="Obito">Obito</option>
         </select>
       </div>
+      <div className={styles.form_vertical_div}>
+        <label className={styles.label_form}>
+          Registro de Animal Criado em
+        </label>
+        <input
+          type="text"
+          value={formatDate(localData.criado_em)}
+          disabled
+          className={styles.input_text}
+          style={{ backgroundColor: "#eee", color: "#666" }}
+        />
+      </div>
+      <div className={styles.form_vertical_div}>
+        <label className={styles.label_form}>
+          Registro de Animal Atualizado em
+        </label>
+        <input
+          type="text"
+          value={formatDate(localData.atualizado_em)}
+          disabled
+          className={styles.input_text}
+          style={{ backgroundColor: "#eee", color: "#666" }}
+        />
+      </div>
 
-      {/* SEÇÃO 2: DADOS DO RESGATE */}
       <h3
         style={{
           fontSize: "1rem",
@@ -582,35 +702,59 @@ function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
         Dados do Resgate
       </h3>
 
+      <div style={{ display: "flex", gap: "10px" }}>
+        <div className={styles.form_vertical_div} style={{ flex: 1 }}>
+          <label className={styles.label_form}>Data do Resgate</label>
+          <input
+            id="data_resgate"
+            type="date"
+            value={
+              localData.data_resgate
+                ? new Date(localData.data_resgate).toISOString().split("T")[0]
+                : ""
+            }
+            onChange={handleChange}
+            disabled={!editable}
+            className={styles.input_text}
+          />
+        </div>
+        <div className={styles.form_vertical_div} style={{ flex: 1 }}>
+          <label className={styles.label_form}>Hora do Resgate</label>
+          <input
+            id="hora_resgate"
+            type="time"
+            value={localData.hora_resgate || ""}
+            onChange={handleChange}
+            disabled={!editable}
+            className={styles.input_text}
+          />
+        </div>
+      </div>
+
       {renderInput("local", "Local do Resgate")}
       {renderInput("agente", "Responsável (Agente)")}
-
       <div className={styles.form_vertical_div}>
         <label htmlFor="destino" className={styles.label_form}>
-          Destino
+          Destino Inicial
         </label>
         <select
           id="destino"
-          value={localData.destino || "CMSA"}
+          value={localData.destino || "CEMSA"}
           onChange={handleChange}
           disabled={!editable}
           className={styles.select_form}
         >
-          <option value="CMSA">CMSA</option>
+          <option value="CEMSA">CEMSA</option>
           <option value="Clinica">Clínica</option>
         </select>
       </div>
-
       {renderInput("solicitante", "Solicitante")}
-
-      {/* SÓ RENDERIZA O TELEFONE SE FOR ADMIN */}
       {isAdmin &&
         renderInput(
           "telefone_solicitante",
           "Telefone do Solicitante",
           handlePhoneChange,
         )}
-
       <div className={styles.form_vertical_div}>
         <label htmlFor="animal_de_rua" className={styles.label_form}>
           Animal de Rua?
@@ -631,7 +775,6 @@ function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
           <option value="nao">Não</option>
         </select>
       </div>
-
       <div className={styles.form_vertical_div}>
         <label htmlFor="observacao" className={styles.label_form}>
           Observação
@@ -644,6 +787,31 @@ function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
           className={styles.input_text}
           rows={3}
           style={{ resize: "vertical" }}
+        />
+      </div>
+
+      <div className={styles.form_vertical_div}>
+        <label className={styles.label_form}>
+          Registro de Resgate Criado em
+        </label>
+        <input
+          type="text"
+          value={formatDate(localData.resgate_criado_em)}
+          disabled
+          className={styles.input_text}
+          style={{ backgroundColor: "#eee", color: "#666" }}
+        />
+      </div>
+      <div className={styles.form_vertical_div}>
+        <label className={styles.label_form}>
+          Registro de Resgate Atualizado em
+        </label>
+        <input
+          type="text"
+          value={formatDate(localData.resgate_atualizado_em)}
+          disabled
+          className={styles.input_text}
+          style={{ backgroundColor: "#eee", color: "#666" }}
         />
       </div>
     </form>
