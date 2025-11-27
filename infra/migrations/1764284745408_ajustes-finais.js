@@ -1,16 +1,7 @@
 /* infra/migrations/1764222340937_ajustes-finais.js */
 
 exports.up = (pgm) => {
-  // 1. Ajustes na tabela ANIMAL
-
-  // REMOVIDO: pgm.dropColumn("animal", "idade"); <--- APAGUE ESTA LINHA
-
-  pgm.createSequence("animal_nome_seq", { start: 1000 });
-
-  pgm.alterColumn("animal", "nome", {
-    default: pgm.func("nextval('animal_nome_seq')::varchar"),
-    notNull: true,
-  });
+  // 1. Tabela ANIMAL: Já está resolvida no arquivo anterior.
 
   // 2. Ajustes na tabela RESGATE
   pgm.addColumns("resgate", {
@@ -37,7 +28,4 @@ exports.down = (pgm) => {
     "animal_de_rua",
     "destino",
   ]);
-  pgm.alterColumn("animal", "nome", { default: null, notNull: false });
-  pgm.dropSequence("animal_nome_seq");
-  // pgm.addColumn("animal", { idade: { type: "varchar(20)" } }); // Mantenha removido do down também
 };
