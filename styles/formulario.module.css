@@ -1,3 +1,5 @@
+/* styles/formulario.module.css */
+
 .container {
   height: 100vh;
   width: 100%;
@@ -12,80 +14,23 @@
   justify-content: center;
   align-items: flex-start;
   padding: 20px;
-  overflow: hidden;
+  overflow: hidden; /* Evita scroll duplo */
 }
 
-/* Caixa principal do formulário */
+/* Caixa principal */
 .form_box {
   background-color: #fff;
   width: 100%;
-  max-width: 900px;
+  max-width: 1000px;
   padding: 30px;
+  padding-bottom: 60px;
   border-radius: 15px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   max-height: 85vh;
-  overflow-y: auto;
+  overflow-y: auto; /* Scroll interno */
   display: flex;
   flex-direction: column;
-}
-
-/* Layout dividido para a aba de usuários */
-.split_layout {
-  display: flex;
-  gap: 30px;
-  width: 100%;
-}
-
-.split_left {
-  flex: 1;
-}
-
-.split_right {
-  flex: 1;
-  border-left: 1px solid #eee;
-  padding-left: 30px;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Lista de Usuários */
-.user_list_container {
-  flex: 1;
-  overflow-y: auto;
-  max-height: 400px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  padding: 10px;
-}
-
-.user_item {
-  background-color: white;
-  padding: 10px;
-  margin-bottom: 8px;
-  border-radius: 6px;
-  border: 1px solid #eee;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.user_info strong {
-  display: block;
-  color: #333;
-}
-
-.user_info span {
-  font-size: 0.8rem;
-  color: #666;
-  text-transform: uppercase;
-  font-weight: bold;
-}
-
-.role_badge_admin {
-  color: #d32f2f;
-}
-.role_badge_comum {
-  color: #006837;
+  box-sizing: border-box;
 }
 
 /* Abas */
@@ -96,6 +41,8 @@
   margin-bottom: 25px;
   border-bottom: 1px solid #eee;
   padding-bottom: 15px;
+  flex-shrink: 0;
+  flex-wrap: wrap; /* Permite quebrar linha no mobile */
 }
 
 .tab_button {
@@ -108,6 +55,7 @@
   transition: all 0.3s ease;
   background-color: #e0e0e0;
   color: #666;
+  white-space: nowrap;
 }
 
 .tab_button.active {
@@ -116,15 +64,74 @@
   box-shadow: 0 2px 8px rgba(0, 104, 55, 0.3);
 }
 
-.tab_button:hover:not(.active) {
-  background-color: #d0d0d0;
+/* Layout Dividido */
+.split_layout {
+  display: flex;
+  gap: 30px;
+  width: 100%;
+  align-items: flex-start;
 }
 
-/* Formulário Geral */
+.split_left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.split_right {
+  flex: 1;
+  border-left: 1px solid #eee;
+  padding-left: 30px;
+  display: flex;
+  flex-direction: column;
+  min-height: 400px;
+}
+
+/* Lista Lateral */
+.user_list_container {
+  flex: 1;
+  height: 450px;
+  overflow-y: auto;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid #eee;
+}
+
+.user_item {
+  background-color: white;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user_info strong {
+  display: block;
+  color: #333;
+  font-size: 0.95rem;
+}
+.user_info span {
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+.role_badge_admin {
+  color: #d32f2f;
+}
+.role_badge_comum {
+  color: #006837;
+}
+
+/* Formulário */
 .formulario {
   display: flex;
   flex-direction: column;
-  gap: 20px; /* Aumentei o espaçamento entre campos para garantir respiro */
+  gap: 15px;
+  padding-bottom: 10px;
 }
 
 .section_title {
@@ -139,19 +146,16 @@
 .subsection_title {
   font-size: 1rem;
   color: #555;
-  margin-top: 15px;
-  margin-bottom: 5px;
+  margin-top: 10px;
   font-weight: 600;
 }
-
 .input_legend {
   font-size: 0.9rem;
   font-weight: 600;
   color: #444;
-  /* CORREÇÃO AQUI: Margem positiva para separar o título do input */
   margin-bottom: 5px;
   margin-left: 2px;
-  display: block; /* Garante que o label ocupe a linha inteira */
+  display: block;
 }
 
 .input_text,
@@ -163,19 +167,7 @@
   border-radius: 8px;
   font-size: 1rem;
   background-color: #f9f9f9;
-  transition:
-    border-color 0.2s,
-    background-color 0.2s;
   box-sizing: border-box;
-}
-
-.input_text:focus,
-.select_field:focus,
-.textarea_field:focus {
-  border-color: #006837;
-  background-color: #fff;
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 104, 55, 0.1);
 }
 
 .textarea_field {
@@ -185,7 +177,7 @@
 
 .row_2_col {
   display: flex;
-  gap: 20px; /* Mais espaço entre colunas */
+  gap: 20px;
   width: 100%;
 }
 
@@ -193,11 +185,18 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  /* Removemos o gap interno aqui para deixar o label controlar a distância */
+}
+
+/* Botões */
+.button_row {
+  display: flex;
+  gap: 10px;
+  margin-top: 25px;
+  margin-bottom: 10px;
 }
 
 .input_submit {
-  margin-top: 20px;
+  flex: 1;
   padding: 15px;
   background: linear-gradient(135deg, #006837 0%, #0bb666 100%);
   color: white;
@@ -206,18 +205,20 @@
   font-size: 1.1rem;
   font-weight: bold;
   cursor: pointer;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
+  text-align: center;
 }
 
-.input_submit:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 104, 55, 0.3);
-}
-
-.input_submit:active {
-  transform: translateY(0);
+.cancel_button {
+  flex: 1;
+  padding: 15px;
+  background-color: #c62828;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  text-align: center;
 }
 
 .successMessage {
@@ -228,4 +229,64 @@
   border: 1px solid #c8e6c9;
   text-align: center;
   color: #2e7d32;
+  font-weight: bold;
+}
+.errorMessage {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #ffebee;
+  border: 1px solid #ffcdd2;
+  text-align: center;
+  color: #c62828;
+  font-weight: bold;
+}
+
+/* RESPONSIVO MOBILE */
+@media (max-width: 768px) {
+  /* Remove altura fixa no mobile para deixar rolar a página */
+  .form_box {
+    max-height: none;
+    overflow: visible;
+    padding: 20px;
+    padding-bottom: 100px; /* Espaço extra para menu mobile */
+  }
+
+  .form_area {
+    overflow-y: auto; /* Rola a página inteira */
+    display: block;
+  }
+
+  /* Quebra o layout dividido em colunas */
+  .split_layout {
+    flex-direction: column;
+  }
+
+  .split_right {
+    border-left: none;
+    border-top: 1px solid #eee;
+    padding-left: 0;
+    padding-top: 30px;
+    margin-top: 20px;
+    width: 100%;
+  }
+
+  /* Quebra linhas de 2 colunas (data/hora, especie/sexo) */
+  .row_2_col {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .user_list_container {
+    height: 300px;
+  }
+
+  /* Ajusta tamanho das fontes */
+  .section_title {
+    font-size: 1.1rem;
+  }
+  .tab_button {
+    width: 100%;
+    text-align: center;
+  }
 }

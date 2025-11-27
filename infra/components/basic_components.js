@@ -1,36 +1,35 @@
 import { useRouter } from "next/router";
 import { signOut, useSession } from "next-auth/react";
+import { useState } from "react";
 
-// 1. Botão de navegação com "Active State"
-export function BotaoMenuBar({ children, destino }) {
+// 1. Botão de navegação
+export function BotaoMenuBar({ children, destino, onClick }) {
   const router = useRouter();
-
-  // Verifica se a rota atual é exatamente o destino deste botão
   const isActive = router.pathname === destino;
 
   const handleClick = () => {
+    if (onClick) onClick();
     router.push(destino);
   };
 
   return (
     <button
-      className="icon_menu"
       onClick={handleClick}
       style={{
-        background: isActive ? "rgba(255, 255, 255, 0.15)" : "transparent", // Realce suave
+        background: isActive ? "rgba(255, 255, 255, 0.15)" : "transparent",
         border: "none",
-        borderRight: "2px solid #0bb66688",
-        // Adiciona uma linha inferior para destacar a aba ativa
         borderBottom: isActive ? "4px solid #3fe37a" : "4px solid transparent",
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
-        color: isActive ? "#fff" : "rgba(255,255,255,0.85)", // Texto mais brilhante se ativo
+        color: isActive ? "#fff" : "rgba(255,255,255,0.85)",
         fontSize: "1rem",
         fontWeight: "bold",
-        padding: "0 15px",
-        minHeight: "60px",
+        padding: "15px",
+        width: "100%",
+        textAlign: "left",
         transition: "all 0.2s ease-in-out",
+        whiteSpace: "nowrap",
       }}
     >
       {children}
@@ -42,7 +41,6 @@ export function BotaoMenuBar({ children, destino }) {
 export function BotaoLogout() {
   return (
     <button
-      className="icon_menu"
       onClick={() => signOut({ callbackUrl: "/" })}
       style={{
         background: "transparent",
@@ -53,9 +51,8 @@ export function BotaoLogout() {
         color: "#ffcccc",
         fontSize: "1rem",
         fontWeight: "bold",
-        padding: "0 15px",
-        minHeight: "60px",
-        marginLeft: "auto",
+        padding: "15px",
+        width: "100%",
         transition: "color 0.2s",
       }}
       onMouseOver={(e) => (e.currentTarget.style.color = "#ff4d4d")}
@@ -66,13 +63,14 @@ export function BotaoLogout() {
   );
 }
 
-// 3. MenuBar com Nome do Usuário
-// CORREÇÃO: Removido '{ titulo }' pois não é mais utilizado
-export function MenuBar() {
+// 3. MenuBar Responsivo
+export function MenuBar({ titulo }) {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "admin";
-  // Pega o nome do usuário da sessão ou usa um fallback
   const userName = session?.user?.name || "Visitante";
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const toggleMenu = () => setMenuOpen(!menuOpen);
 
   const containerStyle = {
     backgroundColor: "#006837",
@@ -80,101 +78,244 @@ export function MenuBar() {
     padding: "0 1rem",
     display: "flex",
     alignItems: "center",
+    justifyContent: "space-between",
     boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
     marginBottom: "20px",
     width: "100%",
     boxSizing: "border-box",
     minHeight: "80px",
+    position: "relative",
+    zIndex: 1000,
   };
 
   return (
-    <section style={containerStyle}>
-      {/* Bloco Esquerda: Logo (Redireciona para o Painel) */}
-      <BotaoMenuBar destino={"/painel"}>
-        <div></div>
-        <h1 style={{ margin: 0, fontSize: "1.5rem", marginLeft: "10px" }}>
-          CEMSA
-        </h1>
-      </BotaoMenuBar>
+    <>
+      <style jsx>{`
+        .desktop-view {
+          display: flex;
+          align-items: center;
+          flex: 1;
+          width: 100%;
+        }
+        .mobile-view {
+          display: none;
+        }
 
-      <nav
-        style={{
-          display: "flex",
-          alignItems: "center",
-          flex: 1,
-          marginLeft: "20px",
-          height: "100%",
-        }}
-      >
-        <div style={{ display: "flex", gap: "0px", height: "100%" }}>
-          {/* Botões de Navegação */}
-          <BotaoMenuBar destino={"/painel/cadastro"}>
-            <span>Cadastro</span>
+        .mobile-page-title {
+          display: none;
+        }
+
+        @media (max-width: 900px) {
+          .desktop-view {
+            display: none !important;
+          }
+
+          .mobile-view {
+            display: flex !important;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 100%; /* Garante altura total para a borda ficar embaixo */
+            padding-left: 10px;
+          }
+
+          /* Título centralizado com borda inferior no mobile */
+          .mobile-page-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 10px;
+            height: 80px; /* Mesma altura da navbar */
+
+            /* AQUI ESTÁ A DEMARCAÇÃO */
+            border-bottom: 4px solid #3fe37a;
+            box-sizing: border-box;
+          }
+        }
+
+        .hamburger-btn {
+          background: transparent;
+          border: none;
+          color: white;
+          font-size: 2rem;
+          cursor: pointer;
+          padding: 5px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+      `}</style>
+
+      <section style={containerStyle}>
+        {/* LOGO (Esquerda) */}
+        <div style={{ flexShrink: 0 }}>
+          <BotaoMenuBar destino={"/painel"}>
+            <h1 style={{ margin: 0, fontSize: "1.5rem" }}>CEMSA</h1>
           </BotaoMenuBar>
+        </div>
 
-          {isAdmin && (
-            <>
-              <BotaoMenuBar destino={"/painel/canil"}>
-                <span>Canil</span>
-              </BotaoMenuBar>
+        {/* --- VISÃO DESKTOP --- */}
+        <nav className="desktop-view">
+          <div style={{ display: "flex", marginLeft: "20px", height: "100%" }}>
+            <BotaoMenuBar destino={"/painel/cadastro"}>Cadastro</BotaoMenuBar>
+            {isAdmin && (
+              <>
+                <BotaoMenuBar destino={"/painel/canil"}>Canil</BotaoMenuBar>
+                <BotaoMenuBar destino={"/painel/clinica"}>Clínica</BotaoMenuBar>
+                <BotaoMenuBar destino={"/painel/adocao"}>Adoção</BotaoMenuBar>
+                <BotaoMenuBar destino={"/painel/obito"}>Óbito</BotaoMenuBar>
+              </>
+            )}
+          </div>
 
-              <BotaoMenuBar destino={"/painel/clinica"}>
-                <span>Clínica</span>
-              </BotaoMenuBar>
+          <div style={{ flex: 1 }}></div>
 
-              <BotaoMenuBar destino={"/painel/adocao"}>
-                <span>Adoção</span>
-              </BotaoMenuBar>
-
-              <BotaoMenuBar destino={"/painel/obito"}>
-                <span>Óbito</span>
-              </BotaoMenuBar>
-            </>
+          {/* Título no Desktop */}
+          {titulo && (
+            <div
+              style={{
+                marginRight: "20px",
+                opacity: 0.9,
+                fontWeight: "bold",
+                fontSize: "1.1rem",
+              }}
+            >
+              {titulo}
+            </div>
           )}
-        </div>
 
-        {/* Espaçador Flexível */}
-        <div style={{ flex: 1 }}></div>
+          <BotaoLogout />
 
-        {/* Botão Sair */}
-        <BotaoLogout />
-
-        {/* Exibição do Usuário Logado (Lado Direito) */}
-        <div
-          style={{
-            marginLeft: "20px",
-            borderLeft: "1px solid rgba(255,255,255,0.3)",
-            paddingLeft: "20px",
-            height: "40px",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "flex-end",
-            minWidth: "120px",
-          }}
-        >
-          <span
+          {/* Info Usuário Desktop */}
+          <div
             style={{
-              fontSize: "0.75rem",
-              color: "#a8e6cf",
-              textTransform: "uppercase",
-              letterSpacing: "1px",
+              marginLeft: "20px",
+              borderLeft: "1px solid rgba(255,255,255,0.3)",
+              paddingLeft: "20px",
+              height: "40px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "flex-end",
+              minWidth: "120px",
             }}
           >
-            Olá,
-          </span>
-          <span
+            <span
+              style={{
+                fontSize: "0.75rem",
+                color: "#a8e6cf",
+                textTransform: "uppercase",
+              }}
+            >
+              Olá,
+            </span>
+            <span
+              style={{
+                fontSize: "1.1rem",
+                fontWeight: "bold",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {userName}
+            </span>
+          </div>
+        </nav>
+
+        {/* --- VISÃO MOBILE --- */}
+        <div className="mobile-view">
+          {/* TÍTULO DA PÁGINA COM BORDA INFERIOR */}
+          <div className="mobile-page-title">{titulo || ""}</div>
+
+          {/* Botão Hambúrguer */}
+          <button className="hamburger-btn" onClick={toggleMenu}>
+            {menuOpen ? "✕" : "☰"}
+          </button>
+        </div>
+
+        {/* --- DROPDOWN MENU MOBILE --- */}
+        {menuOpen && (
+          <div
             style={{
-              fontSize: "1.1rem",
-              fontWeight: "bold",
-              whiteSpace: "nowrap",
+              position: "absolute",
+              top: "80px",
+              left: 0,
+              width: "100%",
+              backgroundColor: "#006837",
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "0 8px 16px rgba(0,0,0,0.2)",
+              padding: "10px 0",
+              zIndex: 9999,
             }}
           >
-            {userName}
-          </span>
-        </div>
-      </nav>
-    </section>
+            <div
+              style={{
+                padding: "15px",
+                borderBottom: "1px solid rgba(255,255,255,0.1)",
+                marginBottom: "5px",
+                textAlign: "center",
+                backgroundColor: "rgba(0,0,0,0.1)",
+              }}
+            >
+              <span
+                style={{
+                  display: "block",
+                  fontSize: "0.8rem",
+                  color: "#a8e6cf",
+                }}
+              >
+                Usuário Logado
+              </span>
+              <span
+                style={{
+                  display: "block",
+                  fontSize: "1.2rem",
+                  fontWeight: "bold",
+                  color: "white",
+                }}
+              >
+                {userName}
+              </span>
+            </div>
+
+            <BotaoMenuBar destino={"/painel/cadastro"} onClick={toggleMenu}>
+              Cadastro
+            </BotaoMenuBar>
+            {isAdmin && (
+              <>
+                <BotaoMenuBar destino={"/painel/canil"} onClick={toggleMenu}>
+                  Canil
+                </BotaoMenuBar>
+                <BotaoMenuBar destino={"/painel/clinica"} onClick={toggleMenu}>
+                  Clínica
+                </BotaoMenuBar>
+                <BotaoMenuBar destino={"/painel/adocao"} onClick={toggleMenu}>
+                  Adoção
+                </BotaoMenuBar>
+                <BotaoMenuBar destino={"/painel/obito"} onClick={toggleMenu}>
+                  Óbito
+                </BotaoMenuBar>
+              </>
+            )}
+            <div
+              style={{
+                borderTop: "1px solid rgba(255,255,255,0.2)",
+                marginTop: "10px",
+              }}
+            >
+              <BotaoLogout />
+            </div>
+          </div>
+        )}
+      </section>
+    </>
   );
 }
 

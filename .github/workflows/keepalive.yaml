@@ -1,0 +1,34 @@
+name: Keep Database Alive
+
+on:
+  schedule:
+    # Roda às 00:00 a cada 6 dias
+    - cron: "0 0 */6 * *"
+  workflow_dispatch: # Permite rodar manualmente pelo botão no GitHub
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Ping Database
+        env:
+          # Certifique-se de adicionar DATABASE_URL nos Secrets do seu repositório (Settings > Secrets and variables > Actions)
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "Aviso: DATABASE_URL não configurada nos Secrets. Pulando execução."
+            echo "Vá em Settings > Secrets and variables > Actions e adicione sua string de conexão."
+            exit 0
+          fi
+
+          echo "Executando SELECT 1 para manter o banco ativo..."
+          psql "$DATABASE_URL" -c "SELECT 1;"
+          echo "Sucesso! Banco mantido ativo."
