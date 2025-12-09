@@ -8,8 +8,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
-// ... funções auxiliares ...
-
 async function deleteImageFromStorage(url) {
   if (!url) return;
   try {
@@ -56,18 +54,15 @@ function formatStatus(statusInput) {
 
 async function animail(req, res) {
   try {
-    // 1. AUTENTICAÇÃO E CAPTURA DE USUÁRIO
+    // 1. AUTENTICAÇÃO
     const session = await getServerSession(req, res, authOptions);
 
-    // Se não estiver logado
     if (!session) {
       return res.status(403).json({
-        error:
-          "Acesso Negado: Apenas o usuário autenticado pode realizar alterações em animais",
+        error: "Acesso Negado: Login necessário.",
       });
     }
 
-    // Pega o nome do usuário logado para auditoria
     const usuarioLogado = session.user?.name || "Desconhecido";
 
     if (req.method === "GET") {
@@ -83,11 +78,9 @@ async function animail(req, res) {
         pagination: { page, limit, total },
       });
     } else if (req.method === "PUT") {
-      // Passa o usuarioLogado para registrar a alteração
       const data = await UpdateAnimal(req.body, usuarioLogado);
       return res.status(200).json({ success: true, data: data });
     } else if (req.method === "POST") {
-      // Passa o usuarioLogado para registrar a criação
       const data = await CreateAnimal(req.body, usuarioLogado);
       return res.status(200).json({ success: true, data: data });
     } else if (req.method === "DELETE") {
@@ -136,13 +129,14 @@ async function getTotalCount(status) {
   return parseInt(result.rows[0].count);
 }
 
-// ALTERAÇÃO AQUI: Recebe 'usuario' e salva em 'atualizado_por'
+// CORREÇÃO: Cria também o registro na tabela Resgate
 async function CreateAnimal(animal, usuario) {
   const animal_obj = typeof animal === "string" ? JSON.parse(animal) : animal;
   const especieFinal = validarEspecie(animal_obj.especie);
   const statusFinal = formatStatus(animal_obj.status);
 
-  const queryObject = {
+  // 1. Cria Animal
+  const resultAnimal = await database.query({
     text: `
       INSERT INTO animal (nome, status, sexo, especie, imagem_url, atualizado_por)
       VALUES ($1, $2, $3, $4, $5, $6)
@@ -154,15 +148,27 @@ async function CreateAnimal(animal, usuario) {
       animal_obj.sexo,
       especieFinal,
       animal_obj.imagem_url || null,
-      usuario, // <--- Salva quem criou
+      usuario,
     ],
-  };
-  const result = await database.query(queryObject);
-  return result.rows?.[0] ?? null;
+  });
+
+  const novoAnimal = resultAnimal.rows[0];
+
+  // 2. Cria Resgate Vazio (Obrigatório para edição futura funcionar)
+  await database.query({
+    text: `
+      INSERT INTO resgate (animal_id, data, hora, local, criado_em, atualizado_em, atualizado_por)
+      VALUES ($1, CURRENT_DATE, CURRENT_TIME, 'Não informado', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $2)
+    `,
+    values: [novoAnimal.id, usuario],
+  });
+
+  return novoAnimal;
 }
 
-// ALTERAÇÃO AQUI: Recebe 'usuario' e salva nas duas tabelas
+// CORREÇÃO: Busca os dados atualizados no final para retornar à tela
 async function UpdateAnimal(animal, usuario) {
+  // Lógica de imagem antiga
   const currentDataResult = await database.query({
     text: "SELECT imagem_url FROM animal WHERE id = $1",
     values: [animal.id],
@@ -192,7 +198,7 @@ async function UpdateAnimal(animal, usuario) {
       animal.sexo,
       animal.imagem_url,
       animal.id,
-      usuario, // <--- Novo parâmetro
+      usuario,
     ],
   });
 
@@ -221,10 +227,27 @@ async function UpdateAnimal(animal, usuario) {
       animal.data_resgate,
       animal.hora_resgate,
       animal.id,
-      usuario, // <--- Novo parâmetro
+      usuario,
     ],
   });
-  return animal;
+
+  // --- BUSCA DADOS FRESCOS PARA RETORNAR ---
+  // Isso garante que o front receba o "atualizado_por" correto imediatamente
+  const dadosAtualizados = await database.query({
+    text: `
+      SELECT 
+        a.id, a.nome, a.status, a.especie, a.sexo, a.imagem_url, a.criado_em, a.atualizado_em, a.atualizado_por,
+        r.local, r.agente, r.observacao, r.solicitante, r.telefone_solicitante, r.animal_de_rua, r.destino,
+        r.data as data_resgate, r.hora as hora_resgate, r.atualizado_por as resgate_atualizado_por,
+        r.criado_em as resgate_criado_em, r.atualizado_em as resgate_atualizado_em
+      FROM animal a
+      LEFT JOIN resgate r ON a.id = r.animal_id
+      WHERE a.id = $1
+    `,
+    values: [animal.id],
+  });
+
+  return dadosAtualizados.rows[0];
 }
 
 async function DeleteAnimal(animalId) {
