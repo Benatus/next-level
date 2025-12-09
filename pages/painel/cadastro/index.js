@@ -68,15 +68,40 @@ function FormResgate({ userName }) {
       const form = e.target;
       let image_url = null;
 
+      // 1. UPLOAD DE IMAGEM COM VALIDAÇÃO
       if (form.imagem.files[0]) {
+        const file = form.imagem.files[0];
+
+        // Validação de tamanho no Front-end (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error(
+            "A imagem selecionada é maior que 5MB. Escolha uma menor.",
+          );
+        }
+
         const formData = new FormData();
-        formData.append("imagem", form.imagem.files[0]);
+        formData.append("imagem", file);
+
         const upRes = await fetch("/api/v1/upload", {
           method: "POST",
           body: formData,
         });
-        const upData = await upRes.json();
-        if (!upRes.ok) throw new Error(upData.error);
+
+        // Tenta ler o JSON de resposta (se houver)
+        const upData = await upRes.json().catch(() => null);
+
+        if (!upRes.ok) {
+          // Se o servidor retornou um erro JSON explicativo
+          if (upData && upData.error) {
+            throw new Error(upData.error);
+          }
+          // Se o servidor retornou erro 413 (Entity Too Large) sem JSON
+          if (upRes.status === 413) {
+            throw new Error("A imagem é muito grande! (Limite: 5MB)");
+          }
+          throw new Error("Falha no upload da imagem.");
+        }
+
         image_url = upData.url;
       }
 
@@ -92,6 +117,7 @@ function FormResgate({ userName }) {
         imagem_url: image_url,
       };
 
+      // 2. CRIA O ANIMAL (Isso gera um Resgate Vazio no Banco)
       const resAnimal = await fetch("/api/v1/animais", {
         method: "POST",
         body: JSON.stringify(animalData),
@@ -112,6 +138,7 @@ function FormResgate({ userName }) {
         animal_id: animal.data.id,
       };
 
+      // 3. ATUALIZA O RESGATE (Usa o endpoint de formulário que agora faz UPDATE)
       const resForm = await fetch("/api/v1/formulario", {
         method: "POST",
         body: JSON.stringify(resgateData),
@@ -121,7 +148,7 @@ function FormResgate({ userName }) {
       if (result.success) {
         setStatus({
           type: "success",
-          msg: `Cadastro realizado! ID: ${animal.data.nome}`,
+          msg: `Cadastro realizado! ID: ${animal.data.nome || animal.data.id}`,
         });
         form.reset();
         if (form.agente) form.agente.value = userName || "";
@@ -180,7 +207,6 @@ function FormResgate({ userName }) {
         Destino do Animal
       </label>
       <select id="destino" className={styles.select_field} required>
-        {/* CORREÇÃO AQUI: CEMSA */}
         <option value="CEMSA">CEMSA</option>
         <option value="Clinica">Clínica</option>
       </select>

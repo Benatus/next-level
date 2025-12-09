@@ -1,20 +1,9 @@
 import db from "infra/database.js";
-import { getServerSession } from "next-auth";
-import { authOptions } from "pages/api/auth/[...nextauth]";
 
 async function formulario(req, res) {
-  const session = await getServerSession(req, res, authOptions);
-
-  // Se não estiver logado OU se o nome do usuário não for "admin"
-  if (!session) {
-    return res.status(403).json({
-      error:
-        "Acesso Negado: Apenas o usuário autenticado pode realizar cadastro",
-    });
-  }
   try {
     if (req.method === "POST") {
-      const data = await registrarResgate(req.body);
+      const data = await registrarOuAtualizarResgate(req.body);
       return res.status(200).json({ success: true, data: data });
     } else if (req.method === "GET") {
       const data = await consultaFormulario();
@@ -26,14 +15,47 @@ async function formulario(req, res) {
       return res.status(405).json({ error: "Método não permitido" });
     }
   } catch (err) {
+    console.error(err);
     return res.status(500).json({ error: "Erro inesperado" });
   }
 }
 
-async function registrarResgate(data) {
+async function registrarOuAtualizarResgate(data) {
   const resgateData = JSON.parse(data);
+  const animalId = resgateData.animal_id;
+
   try {
-    const result = await db.query({
+    // 1. Tenta ATUALIZAR se já existir um resgate para este animal
+    // (O que agora é verdade, pois CreateAnimal cria um vazio)
+    const updateResult = await db.query({
+      text: `
+        UPDATE resgate
+        SET data = $1, hora = $2, local = $3, agente = $4, observacao = $5, 
+            solicitante = $6, telefone_solicitante = $7, animal_de_rua = $8, destino = $9,
+            atualizado_em = CURRENT_TIMESTAMP
+        WHERE animal_id = $10
+        RETURNING *;
+      `,
+      values: [
+        resgateData.data || null,
+        resgateData.hora || null,
+        resgateData.local || null,
+        resgateData.agente || null,
+        resgateData.observacao || null,
+        resgateData.solicitante || null,
+        resgateData.telefone_solicitante || null,
+        resgateData.animal_de_rua || false,
+        resgateData.destino || null,
+        animalId,
+      ],
+    });
+
+    if (updateResult.rowCount > 0) {
+      return updateResult.rows[0];
+    }
+
+    // 2. Se NÃO existiu (caso raro ou antigo), faz o INSERT normal
+    const insertResult = await db.query({
       text: `
         INSERT INTO resgate (
           data, hora, local, agente, observacao, animal_id,
@@ -49,15 +71,14 @@ async function registrarResgate(data) {
         resgateData.agente || null,
         resgateData.observacao || null,
         resgateData.animal_id || null,
-        // Novos campos adicionados aqui:
         resgateData.solicitante || null,
         resgateData.telefone_solicitante || null,
-        resgateData.animal_de_rua || false, // Default false se não vier
+        resgateData.animal_de_rua || false,
         resgateData.destino || null,
       ],
     });
 
-    return result.rows[0];
+    return insertResult.rows[0];
   } catch (err) {
     console.error("Erro ao registrar resgate:", err);
     throw new Error("Não registrou: " + err.message);
@@ -66,12 +87,9 @@ async function registrarResgate(data) {
 
 async function consultaFormulario() {
   const result = await db.query({
-    text: `SELECT *
-FROM resgate
-ORDER BY criado_em DESC
-LIMIT 5;`,
+    text: `SELECT * FROM resgate ORDER BY criado_em DESC LIMIT 5;`,
   });
-  console.log(result.rows);
   return result.rows;
 }
+
 export default formulario;
