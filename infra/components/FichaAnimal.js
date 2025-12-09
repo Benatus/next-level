@@ -112,6 +112,17 @@ const formatDate = (dateString) => {
   if (!dateString) return "---";
   return new Date(dateString).toLocaleDateString("pt-BR");
 };
+// Formata Data e Hora para o PDF
+const formatDateTime = (dateString) => {
+  if (!dateString) return "---";
+  return new Date(dateString).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 const getRegistroLabel = (data) => {
   if (!data.nome || data.nome.trim() === "") return `N° ${data.id}`;
@@ -127,7 +138,6 @@ export default function FichaAnimal({ data }) {
         {/* Cabeçalho */}
         <View style={styles.header}>
           <Text style={styles.title}>Ficha de Registro Animal</Text>
-          {/* CORREÇÃO AQUI: Sigla CMSA ajustada */}
           <Text style={styles.subtitle}>
             CEMSA - Centro Municipal de Saúde Animal
           </Text>
@@ -167,6 +177,20 @@ export default function FichaAnimal({ data }) {
                 <Text style={styles.label}>Data Cadastro:</Text>
                 <Text style={styles.value}>{formatDate(data.criado_em)}</Text>
               </View>
+
+              {/* NOVOS CAMPOS: Atualização do Animal */}
+              <View style={styles.row}>
+                <Text style={styles.label}>Última Atualização:</Text>
+                <Text style={styles.value}>
+                  {formatDateTime(data.atualizado_em)}
+                </Text>
+              </View>
+              {data.atualizado_por && (
+                <View style={styles.row}>
+                  <Text style={styles.label}>Atualizado por:</Text>
+                  <Text style={styles.value}>{data.atualizado_por}</Text>
+                </View>
+              )}
             </View>
           </View>
         </View>
@@ -200,6 +224,20 @@ export default function FichaAnimal({ data }) {
             <Text style={styles.label}>Animal de Rua?</Text>
             <Text style={styles.value}>{formatBool(data.animal_de_rua)}</Text>
           </View>
+
+          {/* NOVOS CAMPOS: Atualização do Resgate */}
+          <View style={[styles.row, { marginTop: 5 }]}>
+            <Text style={styles.label}>Última Atualização:</Text>
+            <Text style={styles.value}>
+              {formatDateTime(data.resgate_atualizado_em)}
+            </Text>
+          </View>
+          {data.resgate_atualizado_por && (
+            <View style={styles.row}>
+              <Text style={styles.label}>Atualizado por:</Text>
+              <Text style={styles.value}>{data.resgate_atualizado_por}</Text>
+            </View>
+          )}
         </View>
 
         {/* Observações */}

@@ -1,12 +1,13 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import database from "infra/database";
-import bcrypt from "bcryptjs"; // MUDANÇA: bcryptjs
+import bcrypt from "bcryptjs";
 
-export default NextAuth({
+// Exportamos as opções para usar na API de usuários também
+export const authOptions = {
   providers: [
     CredentialsProvider({
-      name: "credentials", // minúsculo por convenção
+      name: "credentials",
       credentials: {
         nome: { label: "Usuário", type: "text" },
         password: { label: "Password", type: "password" },
@@ -40,13 +41,19 @@ export default NextAuth({
   },
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.role = user.role;
+      if (user) {
+        token.role = user.role;
+        token.name = user.name;
+      }
       return token;
     },
     async session({ session, token }) {
       session.user.role = token.role;
+      session.user.name = token.name; // Garante que o nome venha na sessão
       return session;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
-});
+};
+
+export default NextAuth(authOptions);

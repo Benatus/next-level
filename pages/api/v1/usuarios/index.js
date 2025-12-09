@@ -1,7 +1,20 @@
 import database from "infra/database";
 import bcrypt from "bcryptjs";
+import { getServerSession } from "next-auth";
+import { authOptions } from "pages/api/auth/[...nextauth]";
 
 export default async function handler(req, res) {
+  // 1. SEGURANÇA: Verifica quem está fazendo a requisição
+  const session = await getServerSession(req, res, authOptions);
+
+  // Se não estiver logado OU se o nome do usuário não for "admin"
+  if (!session || session.user.name !== "admin") {
+    return res.status(403).json({
+      error:
+        "Acesso Negado: Apenas o usuário mestre 'admin' pode gerenciar usuários.",
+    });
+  }
+
   // --- LISTAR ---
   if (req.method === "GET") {
     try {
@@ -37,6 +50,7 @@ export default async function handler(req, res) {
           .json({ error: "Este nome de usuário já está em uso." });
       }
 
+      // Criptografia (Garante o hash antes de salvar)
       const salt = bcrypt.genSaltSync(10);
       const hash = bcrypt.hashSync(senha, salt);
 
@@ -73,7 +87,7 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: "Usuário não encontrado." });
       }
 
-      // Proteção rigorosa do Admin
+      // Proteção rigorosa do Admin (não pode se auto-destruir ou mudar seu próprio nome)
       if (userCheck.rows[0].nome === "admin") {
         if (nome !== "admin") {
           return res.status(403).json({
@@ -91,6 +105,7 @@ export default async function handler(req, res) {
       let query = "UPDATE usuario SET nome = $1, nivel_acesso = $2";
       let values = [nome, nivel_acesso];
 
+      // Se enviou senha, criptografa e adiciona à query
       if (senha && senha.trim() !== "") {
         const salt = bcrypt.genSaltSync(10);
         const hash = bcrypt.hashSync(senha, salt);

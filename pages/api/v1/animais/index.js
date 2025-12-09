@@ -1,6 +1,7 @@
-// ... (Imports e funções auxiliares deleteImageFromStorage, validarEspecie, formatStatus mantidas iguais) ...
 import database from "infra/database";
 import { createClient } from "@supabase/supabase-js";
+import { getServerSession } from "next-auth";
+import { authOptions } from "pages/api/auth/[...nextauth]";
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -54,8 +55,21 @@ function formatStatus(statusInput) {
 }
 
 async function animail(req, res) {
-  // ... (Lógica do handler igual: GET, PUT, POST, DELETE) ...
   try {
+    // 1. AUTENTICAÇÃO E CAPTURA DE USUÁRIO
+    const session = await getServerSession(req, res, authOptions);
+
+    // Se não estiver logado
+    if (!session) {
+      return res.status(403).json({
+        error:
+          "Acesso Negado: Apenas o usuário autenticado pode realizar alterações em animais",
+      });
+    }
+
+    // Pega o nome do usuário logado para auditoria
+    const usuarioLogado = session.user?.name || "Desconhecido";
+
     if (req.method === "GET") {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 15;
@@ -69,10 +83,12 @@ async function animail(req, res) {
         pagination: { page, limit, total },
       });
     } else if (req.method === "PUT") {
-      const data = await UpdateAnimal(req.body);
+      // Passa o usuarioLogado para registrar a alteração
+      const data = await UpdateAnimal(req.body, usuarioLogado);
       return res.status(200).json({ success: true, data: data });
     } else if (req.method === "POST") {
-      const data = await CreateAnimal(req.body);
+      // Passa o usuarioLogado para registrar a criação
+      const data = await CreateAnimal(req.body, usuarioLogado);
       return res.status(200).json({ success: true, data: data });
     } else if (req.method === "DELETE") {
       const { id } = req.query;
@@ -83,17 +99,18 @@ async function animail(req, res) {
       return res.status(405).json({ error: "Método não permitido" });
     }
   } catch (err) {
+    console.error(err);
     return res.status(500).json({ error: "Erro: " + err.message });
   }
 }
 
-// ... (getAnimals e getTotalCount mantidos iguais) ...
+// ... (getAnimals e getTotalCount) ...
 async function getAnimals(limit, offset, status) {
   let queryText = `
     SELECT 
-      a.id, a.nome, a.status, a.especie, a.sexo, a.imagem_url, a.criado_em, a.atualizado_em,
+      a.id, a.nome, a.status, a.especie, a.sexo, a.imagem_url, a.criado_em, a.atualizado_em, a.atualizado_por,
       r.local, r.agente, r.observacao, r.solicitante, r.telefone_solicitante, r.animal_de_rua, r.destino,
-      r.data as data_resgate, r.hora as hora_resgate,
+      r.data as data_resgate, r.hora as hora_resgate, r.atualizado_por as resgate_atualizado_por,
       r.criado_em as resgate_criado_em, r.atualizado_em as resgate_atualizado_em
     FROM animal a
     LEFT JOIN resgate r ON a.id = r.animal_id
@@ -119,32 +136,33 @@ async function getTotalCount(status) {
   return parseInt(result.rows[0].count);
 }
 
-// ALTERAÇÃO AQUI: Nome fixo como Vazio ("")
-async function CreateAnimal(animal) {
+// ALTERAÇÃO AQUI: Recebe 'usuario' e salva em 'atualizado_por'
+async function CreateAnimal(animal, usuario) {
   const animal_obj = typeof animal === "string" ? JSON.parse(animal) : animal;
   const especieFinal = validarEspecie(animal_obj.especie);
   const statusFinal = formatStatus(animal_obj.status);
 
   const queryObject = {
     text: `
-      INSERT INTO animal (nome, status, sexo, especie, imagem_url)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO animal (nome, status, sexo, especie, imagem_url, atualizado_por)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *;
     `,
     values: [
-      "", // <--- NOME VAZIO (String vazia, não null)
+      "",
       statusFinal,
       animal_obj.sexo,
       especieFinal,
       animal_obj.imagem_url || null,
+      usuario, // <--- Salva quem criou
     ],
   };
   const result = await database.query(queryObject);
   return result.rows?.[0] ?? null;
 }
 
-// ... (UpdateAnimal e DeleteAnimal mantidos iguais) ...
-async function UpdateAnimal(animal) {
+// ALTERAÇÃO AQUI: Recebe 'usuario' e salva nas duas tabelas
+async function UpdateAnimal(animal, usuario) {
   const currentDataResult = await database.query({
     text: "SELECT imagem_url FROM animal WHERE id = $1",
     values: [animal.id],
@@ -154,12 +172,16 @@ async function UpdateAnimal(animal) {
     if (animal.imagem_url && oldUrl && oldUrl !== animal.imagem_url)
       await deleteImageFromStorage(oldUrl);
   }
+
   const especieFinal = validarEspecie(animal.especie);
   const statusFinal = formatStatus(animal.status);
+
+  // Update Tabela Animal
   await database.query({
     text: `
       UPDATE animal
-      SET nome = $1, status = $2, especie = $3, sexo = $4, imagem_url = $5, atualizado_em = CURRENT_TIMESTAMP
+      SET nome = $1, status = $2, especie = $3, sexo = $4, imagem_url = $5, 
+          atualizado_em = CURRENT_TIMESTAMP, atualizado_por = $7
       WHERE id = $6 
         AND (nome IS DISTINCT FROM $1 OR status IS DISTINCT FROM $2 OR especie IS DISTINCT FROM $3 OR sexo IS DISTINCT FROM $4 OR imagem_url IS DISTINCT FROM $5);
     `,
@@ -170,16 +192,21 @@ async function UpdateAnimal(animal) {
       animal.sexo,
       animal.imagem_url,
       animal.id,
+      usuario, // <--- Novo parâmetro
     ],
   });
+
   const isAnimalDeRua =
     animal.animal_de_rua === true ||
     animal.animal_de_rua === "true" ||
     animal.animal_de_rua === "sim";
+
+  // Update Tabela Resgate
   await database.query({
     text: `
       UPDATE resgate
-      SET local = $1, agente = $2, observacao = $3, solicitante = $4, telefone_solicitante = $5, animal_de_rua = $6, destino = $7, data = $8, hora = $9, atualizado_em = CURRENT_TIMESTAMP
+      SET local = $1, agente = $2, observacao = $3, solicitante = $4, telefone_solicitante = $5, animal_de_rua = $6, destino = $7, data = $8, hora = $9, 
+          atualizado_em = CURRENT_TIMESTAMP, atualizado_por = $11
       WHERE animal_id = $10
         AND (local IS DISTINCT FROM $1 OR agente IS DISTINCT FROM $2 OR observacao IS DISTINCT FROM $3 OR solicitante IS DISTINCT FROM $4 OR telefone_solicitante IS DISTINCT FROM $5 OR animal_de_rua IS DISTINCT FROM $6 OR destino IS DISTINCT FROM $7 OR data IS DISTINCT FROM $8 OR hora IS DISTINCT FROM $9);
     `,
@@ -194,6 +221,7 @@ async function UpdateAnimal(animal) {
       animal.data_resgate,
       animal.hora_resgate,
       animal.id,
+      usuario, // <--- Novo parâmetro
     ],
   });
   return animal;

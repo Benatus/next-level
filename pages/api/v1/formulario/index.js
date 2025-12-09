@@ -1,6 +1,17 @@
 import db from "infra/database.js";
+import { getServerSession } from "next-auth";
+import { authOptions } from "pages/api/auth/[...nextauth]";
 
 async function formulario(req, res) {
+  const session = await getServerSession(req, res, authOptions);
+
+  // Se não estiver logado OU se o nome do usuário não for "admin"
+  if (!session) {
+    return res.status(403).json({
+      error:
+        "Acesso Negado: Apenas o usuário autenticado pode realizar cadastro",
+    });
+  }
   try {
     if (req.method === "POST") {
       const data = await registrarResgate(req.body);
@@ -25,9 +36,10 @@ async function registrarResgate(data) {
     const result = await db.query({
       text: `
         INSERT INTO resgate (
-          data, hora, local, agente, observacao, animal_id
+          data, hora, local, agente, observacao, animal_id,
+          solicitante, telefone_solicitante, animal_de_rua, destino
         )
-        VALUES ($1, $2, $3, $4, $5, $6)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *;
       `,
       values: [
@@ -37,6 +49,11 @@ async function registrarResgate(data) {
         resgateData.agente || null,
         resgateData.observacao || null,
         resgateData.animal_id || null,
+        // Novos campos adicionados aqui:
+        resgateData.solicitante || null,
+        resgateData.telefone_solicitante || null,
+        resgateData.animal_de_rua || false, // Default false se não vier
+        resgateData.destino || null,
       ],
     });
 
