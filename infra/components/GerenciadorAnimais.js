@@ -112,13 +112,11 @@ export default function GerenciadorAnimais({ filtroStatus, titulo }) {
     [filtroStatus, getCacheKey, saveToCache],
   );
 
-  // CORREÇÃO 1: Envolver handleRefresh em useCallback
   const handleRefresh = useCallback(() => {
     clearCache();
     fetchAnimals(page, true);
   }, [clearCache, fetchAnimals, page]);
 
-  // CORREÇÃO 2: Adicionar handleRefresh nas dependências
   useEffect(() => {
     const channel = new BroadcastChannel("cemsa_updates");
     channel.onmessage = (event) => {
@@ -313,7 +311,6 @@ function PanelData({
     setShowModal(false);
   }, [form_data]);
 
-  // CORREÇÃO 3: Removido try/catch inútil
   async function upload(imagem) {
     const formData = new FormData();
     formData.append("imagem", imagem);
@@ -687,6 +684,21 @@ function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
         "Registro de Animal Atualizado em",
         formatDate(localData.atualizado_em),
       )}
+      {/* EXIBIÇÃO DO USUÁRIO QUE ATUALIZOU O ANIMAL */}
+      {localData.atualizado_por && (
+        <div
+          style={{
+            marginTop: "-10px",
+            marginBottom: "15px",
+            fontSize: "0.85rem",
+            color: "#555",
+            textAlign: "right",
+            fontStyle: "italic",
+          }}
+        >
+          Atualizado por: <strong>{localData.atualizado_por}</strong>
+        </div>
+      )}
 
       <h3
         style={{
@@ -799,6 +811,21 @@ function VerticalForm({ localData, setLocalData, editable, isAdmin }) {
       {renderReadOnlyInput(
         "Registro de Resgate Atualizado em",
         formatDate(localData.resgate_atualizado_em),
+      )}
+      {/* EXIBIÇÃO DO USUÁRIO QUE ATUALIZOU O RESGATE */}
+      {localData.resgate_atualizado_por && (
+        <div
+          style={{
+            marginTop: "-10px",
+            marginBottom: "15px",
+            fontSize: "0.85rem",
+            color: "#555",
+            textAlign: "right",
+            fontStyle: "italic",
+          }}
+        >
+          Atualizado por: <strong>{localData.resgate_atualizado_por}</strong>
+        </div>
       )}
     </form>
   );

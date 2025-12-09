@@ -3,6 +3,8 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { createClient } from "@supabase/supabase-js";
+import { getServerSession } from "next-auth";
+import { authOptions } from "pages/api/auth/[...nextauth]";
 
 // 🔑 Inicializa o Supabase Client
 const supabase = createClient(
@@ -17,6 +19,14 @@ export const config = {
 };
 
 export default async function Upload(req, res) {
+  const session = await getServerSession(req, res, authOptions);
+
+  // Se não estiver logado OU se o nome do usuário não for "admin"
+  if (!session) {
+    return res.status(403).json({
+      error: "Acesso Negado: Apenas o usuário autenticado pode realizar upload",
+    });
+  }
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método não permitido" });
   }
