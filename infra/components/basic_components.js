@@ -54,6 +54,7 @@ export function BotaoLogout() {
         padding: "15px",
         width: "100%",
         transition: "color 0.2s",
+        justifyContent: "center", // Centraliza o texto/ícone
       }}
       onMouseOver={(e) => (e.currentTarget.style.color = "#ff4d4d")}
       onMouseOut={(e) => (e.currentTarget.style.color = "#ffcccc")}
@@ -101,6 +102,7 @@ export function MenuBar({ titulo }) {
           display: none;
         }
 
+        /* Garante que o título mobile suma totalmente no desktop */
         .mobile-page-title {
           display: none;
         }
@@ -115,11 +117,10 @@ export function MenuBar({ titulo }) {
             align-items: center;
             justify-content: space-between;
             width: 100%;
-            height: 100%; /* Garante altura total para a borda ficar embaixo */
+            height: 100%;
             padding-left: 10px;
           }
 
-          /* Título centralizado com borda inferior no mobile */
           .mobile-page-title {
             display: flex;
             align-items: center;
@@ -132,9 +133,7 @@ export function MenuBar({ titulo }) {
             overflow: hidden;
             text-overflow: ellipsis;
             padding: 0 10px;
-            height: 80px; /* Mesma altura da navbar */
-
-            /* AQUI ESTÁ A DEMARCAÇÃO */
+            height: 80px;
             border-bottom: 4px solid #3fe37a;
             box-sizing: border-box;
           }
@@ -177,7 +176,7 @@ export function MenuBar({ titulo }) {
 
           <div style={{ flex: 1 }}></div>
 
-          {/* Título no Desktop */}
+          {/* Título (Apenas Desktop - Opcional se quiser manter) */}
           {titulo && (
             <div
               style={{
@@ -191,13 +190,11 @@ export function MenuBar({ titulo }) {
             </div>
           )}
 
-          <BotaoLogout />
-
-          {/* Info Usuário Desktop */}
+          {/* Info Usuário (Agora vem ANTES do botão Sair) */}
           <div
             style={{
-              marginLeft: "20px",
-              borderLeft: "1px solid rgba(255,255,255,0.3)",
+              marginRight: "20px", // Espaço entre nome e botão sair
+              borderLeft: "1px solid rgba(255,255,255,0.3)", // Borda à esquerda
               paddingLeft: "20px",
               height: "40px",
               display: "flex",
@@ -226,14 +223,17 @@ export function MenuBar({ titulo }) {
               {userName}
             </span>
           </div>
+
+          {/* Botão Sair (Agora na extrema direita) */}
+          <div style={{ width: "auto" }}>
+            <BotaoLogout />
+          </div>
         </nav>
 
         {/* --- VISÃO MOBILE --- */}
         <div className="mobile-view">
-          {/* TÍTULO DA PÁGINA COM BORDA INFERIOR */}
           <div className="mobile-page-title">{titulo || ""}</div>
 
-          {/* Botão Hambúrguer */}
           <button className="hamburger-btn" onClick={toggleMenu}>
             {menuOpen ? "✕" : "☰"}
           </button>
