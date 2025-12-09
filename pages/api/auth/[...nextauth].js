@@ -3,7 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import database from "infra/database";
 import bcrypt from "bcryptjs";
 
-// Exportamos as opções para usar na API de usuários também
+// Exportamos as opções para poder usar no getServerSession em outras APIs
 export const authOptions = {
   providers: [
     CredentialsProvider({
@@ -48,11 +48,15 @@ export const authOptions = {
       return token;
     },
     async session({ session, token }) {
-      session.user.role = token.role;
-      session.user.name = token.name; // Garante que o nome venha na sessão
+      if (token) {
+        session.user.role = token.role;
+        session.user.name = token.name;
+        session.user.id = token.sub; // Opcional: ID do usuário
+      }
       return session;
     },
   },
+  // A chave secreta é lida daqui
   secret: process.env.NEXTAUTH_SECRET,
 };
 
